@@ -5,7 +5,7 @@ VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Webserver", "Webserver\Webserver.csproj", "{0A977AD5-F78D-4DDF-8B31-3F0D5885488F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApplication1", "ConsoleApplication1\ConsoleApplication1.csproj", "{0DB45955-E828-4D11-A196-FBBB47E21668}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleWebserverTest", "SimpleWebserverTest\SimpleWebserverTest.csproj", "{0DB45955-E828-4D11-A196-FBBB47E21668}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
