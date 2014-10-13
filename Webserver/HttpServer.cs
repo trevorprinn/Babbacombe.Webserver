@@ -71,34 +71,40 @@ namespace Babbacombe.Webserver {
         }
 
         private void run(object o) {
-            System.Diagnostics.Trace.WriteLine("Webserver started");
+            System.Diagnostics.Debug.WriteLine("Webserver started");
             while (Running) {
-                ThreadPool.QueueUserWorkItem((c) => {
-                    try {
-                        var context = (HttpListenerContext)c;
+                try {
+                    ThreadPool.QueueUserWorkItem((c) => {
                         try {
-                            var session = Activator.CreateInstance(_sessionType) as HttpSession;
-                            session.Context = context;
-                            session.Response = null;
-                            session.Respond();
-                            if (session.Response != null) {
-                                byte[] buf = Encoding.UTF8.GetBytes(session.Response);
-                                context.Response.ContentLength64 = buf.Length;
-                                context.Response.OutputStream.Write(buf, 0, buf.Length);
+                            var context = (HttpListenerContext)c;
+                            try {
+                                var session = Activator.CreateInstance(_sessionType) as HttpSession;
+                                session.Context = context;
+                                session.Response = null;
+                                session.Respond();
+                                if (session.Response != null) {
+                                    byte[] buf = Encoding.UTF8.GetBytes(session.Response);
+                                    context.Response.ContentLength64 = buf.Length;
+                                    context.Response.OutputStream.Write(buf, 0, buf.Length);
+                                }
+                            } catch (Exception ex) {
+                                OnException(ex);
+                            } finally {
+                                context.Response.OutputStream.Close();
                             }
                         } catch (Exception ex) {
                             OnException(ex);
-                        } finally {
-                            context.Response.OutputStream.Close();
                         }
-                    } catch (Exception ex) {
-                        OnException(ex);
-                    }
-                }, _listener.GetContext());
+                    }, _listener.GetContext());
+                } catch (HttpListenerException ex) {
+                    // When the listener is stopped, an exception occurs on GetContext.
+                    if (Running) OnException(ex);
+                }
             }
+            System.Diagnostics.Debug.WriteLine("Webserver stopped");
         }
 
-        protected void OnException(Exception ex) {
+        protected virtual void OnException(Exception ex) {
             if (Exception != null) Exception(this, new ExceptionEventArgs(ex));
             if (!TrapExceptions) {
                 if (ex is HttpServerException) {
@@ -111,6 +117,7 @@ namespace Babbacombe.Webserver {
 
         protected virtual void Dispose(bool disposing) {
             if (_listener != null) {
+                if (Running) _listener.Stop();
                 _listener.Close();
                 _listener = null;
             }

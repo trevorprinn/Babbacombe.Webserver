@@ -32,9 +32,9 @@ namespace Babbacombe.Webserver {
 
         protected void SendFile(string filename) {
             if (!File.Exists(filename)) {
-                Context.Response.StatusCode = 400;
+                Context.Response.StatusCode = 404;
                 Context.Response.StatusDescription = "File not found";
-                Response = "<html><body>File not found</body></html>";
+                Response = "<html><body>404 - File not found</body></html>";
                 return;
             }
             using (var f = new FileStream(filename, FileMode.Open, FileAccess.Read)) {
