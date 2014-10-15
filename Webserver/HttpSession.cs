@@ -11,12 +11,23 @@ namespace Babbacombe.Webserver {
     public class HttpSession {
 
         protected internal HttpListenerContext Context { get; internal set; }
+        protected internal HttpServer Server { get; internal set; }
+        private string _sessionId;
+
+        protected internal string SessionId {
+            get { return _sessionId; }
+            internal set {
+                _sessionId = value;
+                Context.Response.Cookies.Add(new Cookie("BabSession", value));
+            }
+        }
 
         protected internal virtual void Respond() {
             var url = Context.Request.Url;
             var fname = url.AbsolutePath;
             fname = fname.TrimStart('/');
             SendFile(Path.Combine(".", fname));
+            Context.Response.StatusCode = 200;
         }
 
         protected internal string Response { get; set; }
@@ -40,6 +51,11 @@ namespace Babbacombe.Webserver {
             using (var f = new FileStream(filename, FileMode.Open, FileAccess.Read)) {
                 f.CopyTo(Context.Response.OutputStream);
             }
+        }
+
+        protected internal void CreateSessionId() {
+            if (SessionId != null) return;
+            SessionId = Guid.NewGuid().ToString();
         }
     }
 }

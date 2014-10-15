@@ -12,7 +12,7 @@ namespace Babbacombe.Webserver {
         private Type _sessionType;
         
         /// <summary>
-        /// Whether exceptions in background threads are thrown. Defaults to false.
+        /// Whether exceptions in background threads are thrown. Defaults to false (ie, they are thrown).
         /// </summary>
         /// <remarks>
         /// These exceptions are passed out in Exception events regardless of how this is set.
@@ -29,6 +29,14 @@ namespace Babbacombe.Webserver {
         /// Raised when an exception occurs within a background thread.
         /// </summary>
         public event EventHandler<ExceptionEventArgs> Exception;
+
+        /// <summary>
+        /// Controls whether the same session object is used across requests from the same source.
+        /// Defaults to False. Can be overridden within a session.
+        /// </summary>
+        public bool TrackSessions { get; set; }
+
+        private List<HttpSession> _cachedSessions = new List<HttpSession>();
 
         public HttpServer(IEnumerable<string> prefixes) {
             if (!HttpListener.IsSupported) {
@@ -68,6 +76,7 @@ namespace Babbacombe.Webserver {
 
         public void Stop() {
             _listener.Stop();
+            _cachedSessions = new List<HttpSession>();
         }
 
         private void run(object o) {
@@ -78,10 +87,14 @@ namespace Babbacombe.Webserver {
                         try {
                             var context = (HttpListenerContext)c;
                             try {
-                                var session = Activator.CreateInstance(_sessionType) as HttpSession;
+                                var session = getSession(context);
                                 session.Context = context;
                                 session.Response = null;
+                                context.Response.ContentType = "text/html";
                                 session.Respond();
+
+                                if (session.SessionId != null && !_cachedSessions.Contains(session)) _cachedSessions.Add(session);
+
                                 if (session.Response != null) {
                                     byte[] buf = Encoding.UTF8.GetBytes(session.Response);
                                     context.Response.ContentLength64 = buf.Length;
@@ -91,6 +104,7 @@ namespace Babbacombe.Webserver {
                                 OnException(ex);
                             } finally {
                                 context.Response.OutputStream.Close();
+                                context.Response.Close();
                             }
                         } catch (Exception ex) {
                             OnException(ex);
@@ -102,6 +116,30 @@ namespace Babbacombe.Webserver {
                 }
             }
             System.Diagnostics.Debug.WriteLine("Webserver stopped");
+        }
+
+        private HttpSession getSession(HttpListenerContext context) {
+            HttpSession session;
+            var sessionId = identifySession(context.Request);
+            session = sessionId != null ? _cachedSessions.FirstOrDefault(s => s.SessionId == sessionId) : null;
+            if (session == null) {
+                session = Activator.CreateInstance(_sessionType) as HttpSession;
+                session.Context = context;
+                session.Server = this;
+                if (sessionId != null) {
+                    session.SessionId = sessionId;
+                } else if (TrackSessions) {
+                    session.CreateSessionId();
+                }
+            } else {
+                session.Context = context;
+            }
+            return session;
+        }
+
+        private string identifySession(HttpListenerRequest request) {
+            var cookie = request.Cookies.Cast<Cookie>().FirstOrDefault(c => c.Name == "BabSession");
+            return cookie != null ? cookie.Value : null;
         }
 
         protected virtual void OnException(Exception ex) {
