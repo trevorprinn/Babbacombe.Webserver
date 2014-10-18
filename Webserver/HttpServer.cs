@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ namespace Babbacombe.Webserver {
     public class HttpServer : IDisposable {
         private HttpListener _listener;
         private Type _sessionType;
+        public string BaseFolder { get; set; }
         
         /// <summary>
         /// Whether exceptions in background threads are thrown. Defaults to false (ie, they are thrown).
@@ -49,6 +51,8 @@ namespace Babbacombe.Webserver {
 
             _listener = new HttpListener();
             foreach (var p in prefs) _listener.Prefixes.Add(p);
+
+            BaseFolder = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
         }
 
         public HttpServer(int port = 80)
@@ -126,6 +130,7 @@ namespace Babbacombe.Webserver {
                 session = Activator.CreateInstance(_sessionType) as HttpSession;
                 session.Context = context;
                 session.Server = this;
+                session.BaseFolder = BaseFolder;
                 if (sessionId != null) {
                     session.SessionId = sessionId;
                 } else if (TrackSessions) {
