@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+	</head>
+	<body>
+		The current Pi temperature is <span Tag="temperature"/>°C.
+	</body>
+</html>
