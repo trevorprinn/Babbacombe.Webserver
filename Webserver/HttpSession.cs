@@ -70,6 +70,10 @@ namespace Babbacombe.Webserver {
 
         public string Response { get; set; }
 
+        public void SetXmlResponse(XDocument doc) {
+            Response = doc.ToString();
+        }
+
         public void SetXmlResponse(XElement data) {
             Response = data.ToString();
         }
@@ -110,9 +114,9 @@ namespace Babbacombe.Webserver {
                 var qs = HttpUtility.ParseQueryString(url.Query);
                 for (int i = 0; i < qs.Count; i++) {
                     var n = qs.AllKeys[i];
-                    if (n == null) continue;
                     var v = qs.GetValues(i).FirstOrDefault();
-                    if (v == null) continue;
+                    if (n == null) n = v;
+                    if (n == null) continue;
                     items.Add(new QueryItem { Name = n, Value = v });
                 }
                 return items;
