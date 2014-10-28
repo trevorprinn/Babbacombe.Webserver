@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Babbacombe.Webserver {
     public class HttpServer : IDisposable {
-        private HttpListener _listener;
+        protected HttpListener Listener { get; private set; }
         private Type _sessionType;
         public string BaseFolder { get; set; }
         
@@ -49,8 +49,8 @@ namespace Babbacombe.Webserver {
             var prefs = prefixes != null ? prefixes.ToList() : new List<string>();
             if (prefs.Count == 0) prefs.Add("http://+:80/");
 
-            _listener = new HttpListener();
-            foreach (var p in prefs) _listener.Prefixes.Add(p);
+            Listener = new HttpListener();
+            foreach (var p in prefs) Listener.Prefixes.Add(p);
 
             BaseFolder = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
         }
@@ -63,23 +63,23 @@ namespace Babbacombe.Webserver {
             set {
                 if (value == null) throw new ArgumentNullException();
                 if (!(value.Equals(typeof(HttpSession)) || value.IsSubclassOf(typeof(HttpSession)))) throw new ArgumentException(string.Format("{0} is not derived from Babbacombe.Webserver.HttpSession", value.FullName));
-                if (_listener.IsListening) throw new HttpServerException("Can't change session type while the server is running.");
+                if (Listener.IsListening) throw new HttpServerException("Can't change session type while the server is running.");
                 _sessionType = value;
             }
         }
 
-        public IEnumerable<string> Prefixes { get { return _listener.Prefixes; } }
+        public IEnumerable<string> Prefixes { get { return Listener.Prefixes; } }
 
-        public bool Running { get { return _listener.IsListening; } }
+        public bool Running { get { return Listener.IsListening; } }
 
         public void Start() {
             if (Running) return;
-            _listener.Start();
+            Listener.Start();
             ThreadPool.QueueUserWorkItem(new WaitCallback(run));
         }
 
         public void Stop() {
-            _listener.Stop();
+            Listener.Stop();
             _cachedSessions = new List<HttpSession>();
         }
 
@@ -113,7 +113,7 @@ namespace Babbacombe.Webserver {
                         } catch (Exception ex) {
                             OnException(ex);
                         }
-                    }, _listener.GetContext());
+                    }, Listener.GetContext());
                 } catch (HttpListenerException ex) {
                     // When the listener is stopped, an exception occurs on GetContext.
                     if (Running) OnException(ex);
@@ -159,10 +159,10 @@ namespace Babbacombe.Webserver {
         }
 
         protected virtual void Dispose(bool disposing) {
-            if (_listener != null) {
-                if (Running) _listener.Stop();
-                _listener.Close();
-                _listener = null;
+            if (Listener != null) {
+                if (Running) Listener.Stop();
+                Listener.Close();
+                Listener = null;
             }
         }
 
