@@ -42,5 +42,9 @@ namespace Babbacombe.Webserver {
             }
         }
 
+        protected IEnumerable<QueryItem> GetPostedItems() {
+            return QueryItem.GetItems(ReadPostStream());
+        }
+
     }
 }

@@ -105,24 +105,6 @@ namespace Babbacombe.Webserver {
             return names.Contains(ClassParameter) && names.Contains(MethodParameter);
         }
 
-        public class QueryItem {
-            public string Name { get; private set; }
-            public string Value { get; private set; }
-
-            internal static IEnumerable<QueryItem> GetItems(Uri url) {
-                List<QueryItem> items = new List<QueryItem>();
-                var qs = HttpUtility.ParseQueryString(url.Query);
-                for (int i = 0; i < qs.Count; i++) {
-                    var n = qs.AllKeys[i];
-                    var v = qs.GetValues(i).FirstOrDefault();
-                    if (n == null) n = v;
-                    if (n == null) continue;
-                    items.Add(new QueryItem { Name = n, Value = v });
-                }
-                return items;
-            }
-        }
-
         protected void RunMethod() {
             string className = string.Format("{0}.{1}", HandlerNamespace, QueryItems.Single(i => i.Name == ClassParameter).Value);
             var handler = _handlers.SingleOrDefault(h => h.GetType().FullName == className);
@@ -158,4 +140,27 @@ namespace Babbacombe.Webserver {
             get { return "m"; }
         }
     }
+
+    public class QueryItem {
+        public string Name { get; private set; }
+        public string Value { get; private set; }
+
+        internal static IEnumerable<QueryItem> GetItems(Uri url) {
+            return GetItems(url.Query);
+        }
+
+        internal static IEnumerable<QueryItem> GetItems(string query) {
+            List<QueryItem> items = new List<QueryItem>();
+            var qs = HttpUtility.ParseQueryString(query);
+            for (int i = 0; i < qs.Count; i++) {
+                var n = qs.AllKeys[i];
+                var v = qs.GetValues(i).FirstOrDefault();
+                if (n == null) n = v;
+                if (n == null) continue;
+                items.Add(new QueryItem { Name = n, Value = v });
+            }
+            return items;
+        }
+    }
+
 }
