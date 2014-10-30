@@ -20,6 +20,8 @@ namespace Babbacombe.Webserver {
 
         private List<HttpRequestHandler> _handlers = new List<HttpRequestHandler>();
 
+        internal DateTime LastAccessed { get; set; }
+
         protected internal string SessionId {
             get { return _sessionId; }
             internal set {
@@ -138,6 +140,17 @@ namespace Babbacombe.Webserver {
 
         protected virtual string MethodParameter {
             get { return "m"; }
+        }
+
+        /// <summary>
+        /// How long this session is kept idle before expiring it. Defaults to the Server's SessionsExpiryTime.
+        /// </summary>
+        protected internal virtual TimeSpan ExpiryTime {
+            get { return Server.SessionsExpiryTime; }
+        }
+
+        internal DateTime ExpiresAt {
+            get { return LastAccessed.Add(ExpiryTime); }
         }
     }
 

@@ -40,6 +40,16 @@ namespace Babbacombe.Webserver {
 
         private List<HttpSession> _cachedSessions = new List<HttpSession>();
 
+        /// <summary>
+        /// How long a session is kept unused before being expired. Defaults to 1 hour.
+        /// </summary>
+        public TimeSpan SessionsExpiryTime { get; set; }
+
+        /// <summary>
+        /// How often to check for expired sessions. Defaults to 5 minutes.
+        /// </summary>
+        public TimeSpan SessionsExpiryInterval { get; set; }
+
         public HttpServer(IEnumerable<string> prefixes) {
             if (!HttpListener.IsSupported) {
                 throw new HttpServerException("HttpListener is not supported");
@@ -53,6 +63,9 @@ namespace Babbacombe.Webserver {
             foreach (var p in prefs) Listener.Prefixes.Add(p);
 
             BaseFolder = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+
+            SessionsExpiryTime = new TimeSpan(1, 0, 0);
+            SessionsExpiryInterval = new TimeSpan(0, 5, 0);
         }
 
         public HttpServer(int port = 80)
@@ -78,60 +91,100 @@ namespace Babbacombe.Webserver {
             ThreadPool.QueueUserWorkItem(new WaitCallback(run));
         }
 
-        public void Stop() {
+        public void Stop(bool clearSessions = true) {
             Listener.Stop();
-            _cachedSessions = new List<HttpSession>();
+            if (clearSessions) {
+                lock (_cachedSessions) {
+                    foreach (var s in _cachedSessions.OfType<IDisposable>()) {
+                        s.Dispose();
+                    }
+                    _cachedSessions = new List<HttpSession>();
+                }
+            }
         }
 
         private void run(object o) {
             System.Diagnostics.Debug.WriteLine("Webserver started");
-            while (Running) {
-                try {
-                    ThreadPool.QueueUserWorkItem((c) => {
-                        try {
-                            var context = (HttpListenerContext)c;
+            using (var expiryTimer = new System.Timers.Timer()) {
+                expiryTimer.Interval = SessionsExpiryInterval.TotalMilliseconds;
+                expiryTimer.Elapsed += expiryTimer_Elapsed;
+
+                while (Running) {
+                    try {
+                        ThreadPool.QueueUserWorkItem((c) => {
                             try {
-                                var session = getSession(context);
-                                session.Context = context;
-                                session.Response = null;
-                                context.Response.ContentType = "text/html";
-                                session.Respond();
-
-                                if (session.SessionId != null && !_cachedSessions.Contains(session)) _cachedSessions.Add(session);
-
-                                if (session.Response != null) {
-                                    byte[] buf = Encoding.UTF8.GetBytes(session.Response);
-                                    context.Response.ContentLength64 = buf.Length;
-                                    context.Response.OutputStream.Write(buf, 0, buf.Length);
-                                }
+                                handleRequest((HttpListenerContext)c);
                             } catch (Exception ex) {
                                 OnException(ex);
-                            } finally {
-                                context.Response.OutputStream.Close();
-                                context.Response.Close();
                             }
-                        } catch (Exception ex) {
-                            OnException(ex);
-                        }
-                    }, Listener.GetContext());
-                } catch (HttpListenerException ex) {
-                    // When the listener is stopped, an exception occurs on GetContext.
-                    if (Running) OnException(ex);
+                        }, Listener.GetContext());
+                    } catch (HttpListenerException ex) {
+                        // When the listener is stopped, an exception occurs on GetContext.
+                        if (Running) OnException(ex);
+                    }
                 }
             }
             System.Diagnostics.Debug.WriteLine("Webserver stopped");
         }
 
+        private void handleRequest(HttpListenerContext context) {
+            try {
+                var session = getSession(context);
+                session.LastAccessed = DateTime.UtcNow;
+                session.Context = context;
+                session.Response = null;
+                context.Response.ContentType = "text/html";
+                session.Respond();
+
+                lock (_cachedSessions) {
+                    if (session.SessionId != null && !_cachedSessions.Contains(session)) _cachedSessions.Add(session);
+                }
+
+                if (session.Response != null) {
+                    byte[] buf = Encoding.UTF8.GetBytes(session.Response);
+                    context.Response.ContentLength64 = buf.Length;
+                    context.Response.OutputStream.Write(buf, 0, buf.Length);
+                }
+                session.LastAccessed = DateTime.UtcNow;
+
+                if (session.SessionId == null && session is IDisposable) {
+                    // In case the session type has been made disposable.
+                    ((IDisposable)session).Dispose();
+                }
+            } catch (Exception ex) {
+                OnException(ex);
+            } finally {
+                context.Response.OutputStream.Close();
+                context.Response.Close();
+            }
+        }
+
+        void expiryTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
+            lock (_cachedSessions) {
+                var now = DateTime.UtcNow;
+                var expired = _cachedSessions.Where(s => s.ExpiresAt < now).ToList();
+                foreach (var s in expired) {
+                    // An implementation of HttpSession could have been made disposable
+                    var disp = s as IDisposable;
+                    if (disp != null) disp.Dispose();
+                    _cachedSessions.Remove(s);
+                }
+            }
+        }
+
         private HttpSession getSession(HttpListenerContext context) {
             HttpSession session;
             var sessionId = identifySession(context.Request);
-            session = sessionId != null ? _cachedSessions.FirstOrDefault(s => s.SessionId == sessionId) : null;
+            lock (_cachedSessions) {
+                session = sessionId != null ? _cachedSessions.SingleOrDefault(s => s.SessionId == sessionId) : null;
+            }
             if (session == null) {
                 session = Activator.CreateInstance(_sessionType) as HttpSession;
                 session.Context = context;
                 session.Server = this;
                 session.BaseFolder = BaseFolder;
                 if (sessionId != null) {
+                    // The session has expired. Start a new one with the old cookie.
                     session.SessionId = sessionId;
                 } else if (TrackSessions) {
                     session.CreateSessionId();
