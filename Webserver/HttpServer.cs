@@ -8,9 +8,24 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Babbacombe.Webserver {
+
+    /// <summary>
+    /// The main webserver class. This manages listening at the port and handling HttpSession objects.
+    /// </summary>
     public class HttpServer : IDisposable {
+        
+        /// <summary>
+        /// The underlying .net listener object, created when the Server is created. There is not normally any need to access this,
+        /// but an implementation of HttpServer could use it directly to add authorization, for example.
+        /// </summary>
         protected HttpListener Listener { get; private set; }
         private Type _sessionType;
+
+        /// <summary>
+        /// The base folder for accessing files (html, scripts etc). Defaults to the location of the
+        /// application using the Server. If another location is required, it should be set before
+        /// the server is started.
+        /// </summary>
         public string BaseFolder { get; set; }
         
         /// <summary>
@@ -33,11 +48,12 @@ namespace Babbacombe.Webserver {
         public event EventHandler<ExceptionEventArgs> Exception;
 
         /// <summary>
-        /// Controls whether the same session object is used across requests from the same source.
+        /// Controls whether the same session object is used across requests from the same client.
         /// Defaults to False. Can be overridden within a session.
         /// </summary>
         public bool TrackSessions { get; set; }
 
+        // The list of sessions being tracked.
         private List<HttpSession> _cachedSessions = new List<HttpSession>();
 
         /// <summary>
@@ -50,6 +66,10 @@ namespace Babbacombe.Webserver {
         /// </summary>
         public TimeSpan SessionsExpiryInterval { get; set; }
 
+        /// <summary>
+        /// Creates a server that listens on a set of prefixes, as defined for HttpListener.
+        /// </summary>
+        /// <param name="prefixes"></param>
         public HttpServer(IEnumerable<string> prefixes) {
             if (!HttpListener.IsSupported) {
                 throw new HttpServerException("HttpListener is not supported");
@@ -68,9 +88,18 @@ namespace Babbacombe.Webserver {
             SessionsExpiryInterval = new TimeSpan(0, 5, 0);
         }
 
+        /// <summary>
+        /// Creates a server (with no app specified) that listens on a port. If no port is specified,
+        /// it listens on Port 80.
+        /// </summary>
+        /// <param name="port"></param>
         public HttpServer(int port = 80)
             : this(new string[] { string.Format("http://+:{0}/", port) }) { }
 
+        /// <summary>
+        /// The class that will be created whenever a session is started. Defaults to
+        /// the built in <see cref="Babbacombe.Webserver.HttpSession"/>.
+        /// </summary>
         public Type SessionType {
             get { return _sessionType; }
             set {
@@ -81,16 +110,31 @@ namespace Babbacombe.Webserver {
             }
         }
 
+        /// <summary>
+        /// Gets the prefixes the listener is listening on.
+        /// </summary>
         public IEnumerable<string> Prefixes { get { return Listener.Prefixes; } }
 
+        /// <summary>
+        /// True if the server has been started, and is not current stopped.
+        /// </summary>
         public bool Running { get { return Listener.IsListening; } }
 
+        /// <summary>
+        /// Starts the server listening.
+        /// </summary>
         public void Start() {
             if (Running) return;
             Listener.Start();
             ThreadPool.QueueUserWorkItem(new WaitCallback(run));
         }
 
+        /// <summary>
+        /// Stops the server listening, but does not dispose of it. It can be restarted.
+        /// </summary>
+        /// <param name="clearSessions">
+        /// Whether to clear away existing sessions. Defaults to true.
+        /// </param>
         public void Stop(bool clearSessions = true) {
             Listener.Stop();
             if (clearSessions) {
@@ -130,25 +174,33 @@ namespace Babbacombe.Webserver {
         private void handleRequest(HttpListenerContext context) {
             try {
                 var session = getSession(context);
+                // Reset the time used to calculate expiry.
                 session.LastAccessed = DateTime.UtcNow;
-                session.Context = context;
+                // Clear out any output from previous requests.
                 session.Response = null;
+                // Default the return type.
                 context.Response.ContentType = "text/html";
+                // Get the response from the session.
                 session.Respond();
 
+                // If this session is to be saved, add it to the cache if it's not already there.
                 lock (_cachedSessions) {
                     if (session.SessionId != null && !_cachedSessions.Contains(session)) _cachedSessions.Add(session);
                 }
 
+                // If the session has put the text of a page into the Response property, send it.
+                // If this is null, it's assumed the session has sent the response some other way.
                 if (session.Response != null) {
                     byte[] buf = Encoding.UTF8.GetBytes(session.Response);
                     context.Response.ContentLength64 = buf.Length;
                     context.Response.OutputStream.Write(buf, 0, buf.Length);
                 }
+                // Reset the expiry timer again in case the response took a hideously long time.
                 session.LastAccessed = DateTime.UtcNow;
 
+                // If the session is not being saved, and it is of a type which has been made
+                // disposable, dispose of it.
                 if (session.SessionId == null && session is IDisposable) {
-                    // In case the session type has been made disposable.
                     ((IDisposable)session).Dispose();
                 }
             } catch (Exception ex) {
@@ -159,6 +211,7 @@ namespace Babbacombe.Webserver {
             }
         }
 
+        // Called every so often to expire sessions that haven't been accessed for a while.
         void expiryTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
             lock (_cachedSessions) {
                 var now = DateTime.UtcNow;
@@ -174,11 +227,13 @@ namespace Babbacombe.Webserver {
 
         private HttpSession getSession(HttpListenerContext context) {
             HttpSession session;
+            // See if the request contains our session id cookie.
             var sessionId = identifySession(context.Request);
             lock (_cachedSessions) {
                 session = sessionId != null ? _cachedSessions.SingleOrDefault(s => s.SessionId == sessionId) : null;
             }
             if (session == null) {
+                // Create a session of the required type.
                 session = Activator.CreateInstance(_sessionType) as HttpSession;
                 session.Context = context;
                 session.Server = this;
@@ -187,6 +242,7 @@ namespace Babbacombe.Webserver {
                     // The session has expired. Start a new one with the old cookie.
                     session.SessionId = sessionId;
                 } else if (TrackSessions) {
+                    // Create a cookie if required.
                     session.CreateSessionId();
                 }
             } else {
@@ -196,6 +252,8 @@ namespace Babbacombe.Webserver {
         }
 
         private string identifySession(HttpListenerRequest request) {
+            // Look for a cookie called BabSession in the request. It identifies the client and
+            // there should be a session object already existing for it.
             var cookie = request.Cookies.Cast<Cookie>().FirstOrDefault(c => c.Name == "BabSession");
             return cookie != null ? cookie.Value : null;
         }
