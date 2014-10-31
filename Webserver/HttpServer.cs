@@ -67,6 +67,15 @@ namespace Babbacombe.Webserver {
         public TimeSpan SessionsExpiryInterval { get; set; }
 
         /// <summary>
+        /// Default filenames that the server will look for (in BaseFolder) if no class/method or
+        /// filename is specified in the request url.
+        /// </summary>
+        /// <remarks>
+        /// Defaults to index.htm, Index.htm, index.html, Index.html
+        /// </remarks>
+        public List<string> DefaultFilenames { get; private set; }
+
+        /// <summary>
         /// Creates a server that listens on a set of prefixes, as defined for HttpListener.
         /// </summary>
         /// <param name="prefixes"></param>
@@ -86,6 +95,8 @@ namespace Babbacombe.Webserver {
 
             SessionsExpiryTime = new TimeSpan(1, 0, 0);
             SessionsExpiryInterval = new TimeSpan(0, 5, 0);
+
+            DefaultFilenames = new List<string>(new string[] { "index.htm", "Index.htm", "index.html", "Index.html" });
         }
 
         /// <summary>

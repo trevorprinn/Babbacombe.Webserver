@@ -82,7 +82,18 @@ namespace Babbacombe.Webserver {
             }
 
             var url = Context.Request.Url;
-            var fname = ConstructFilename(url.AbsolutePath);
+            string fname;
+            if (string.IsNullOrWhiteSpace(url.AbsolutePath) || url.AbsolutePath == "/") {
+                fname = getDefaultFilename();
+                if (fname == null) {
+                    Context.Response.StatusCode = 404;
+                    Context.Response.StatusDescription = "File not found";
+                    Response = "<html><body>404 - File not found</body></html>";
+                    return;
+                }
+            } else {
+                fname = ConstructFilename(url.AbsolutePath);
+            }
             Context.Response.StatusCode = 200;
             SendFile(fname);
         }
@@ -101,6 +112,14 @@ namespace Babbacombe.Webserver {
             if (Path.DirectorySeparatorChar != '/') filepath = filepath.Replace('/', Path.DirectorySeparatorChar);
 
             return Path.Combine(BaseFolder, filepath);            
+        }
+
+        private string getDefaultFilename() {
+            foreach (string name in Server.DefaultFilenames) {
+                var fname = ConstructFilename(name);
+                if (File.Exists(fname)) return fname;
+            }
+            return null;
         }
 
         /// <summary>
