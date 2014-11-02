@@ -79,7 +79,7 @@ namespace Babbacombe.Webserver {
         /// Creates a server that listens on a set of prefixes, as defined for HttpListener.
         /// </summary>
         /// <param name="prefixes"></param>
-        public HttpServer(IEnumerable<string> prefixes) {
+        protected HttpServer(IEnumerable<string> prefixes) {
             if (!HttpListener.IsSupported) {
                 throw new HttpServerException("HttpListener is not supported");
             }
@@ -241,14 +241,14 @@ namespace Babbacombe.Webserver {
             // See if the request contains our session id cookie.
             var sessionId = identifySession(context.Request);
             lock (_cachedSessions) {
-                session = sessionId != null ? _cachedSessions.SingleOrDefault(s => s.SessionId == sessionId) : null;
+                session = sessionId != null ? _cachedSessions.SingleOrDefault(s => MatchesSession(s, sessionId, context.Request.Url)) : null;
             }
             if (session == null) {
                 // Create a session of the required type.
-                session = Activator.CreateInstance(_sessionType) as HttpSession;
+                session = CreateSession(context.Request.Url);
                 session.Context = context;
                 session.Server = this;
-                session.BaseFolder = BaseFolder;
+                if (session.BaseFolder == null) session.BaseFolder = BaseFolder;
                 if (sessionId != null) {
                     // The session has expired. Start a new one with the old cookie.
                     session.SessionId = sessionId;
@@ -260,6 +260,28 @@ namespace Babbacombe.Webserver {
                 session.Context = context;
             }
             return session;
+        }
+
+        /// <summary>
+        /// A function that identifies a session within the cache given a cached session,
+        /// the SessionId (identifying the client) and the request url.
+        /// </summary>
+        protected virtual Func<HttpSession, string, Uri, bool> MatchesSession {
+            get { return (sess, sid, url) => sess.SessionId == sid; }
+        }
+
+        /// <summary>
+        /// Creates a session of the type required.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        protected virtual HttpSession CreateSession(Uri url) {
+            return (HttpSession)Activator.CreateInstance(_sessionType);
+        }
+
+        protected internal virtual string GetFilenameFromRequest(Uri url) {
+            if (string.IsNullOrWhiteSpace(url.AbsolutePath) || url.AbsolutePath == "/") return null;
+            return url.AbsolutePath;
         }
 
         private string identifySession(HttpListenerRequest request) {

@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HttpAppServer.cs" />
     <Compile Include="HttpPage.cs" />
     <Compile Include="HttpRequestHandler.cs" />
     <Compile Include="HttpServer.cs" />

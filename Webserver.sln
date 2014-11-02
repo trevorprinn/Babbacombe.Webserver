@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimplePageTest", "SimplePag
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubmitPostTest", "SubmitPostTest\SubmitPostTest.csproj", "{CB037E0F-6E52-4B6C-9BF1-F1A8F5EC3A29}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppTest", "AppTest\AppTest.csproj", "{8C21622D-11B4-4C20-8D36-9941A63DEB07}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{CB037E0F-6E52-4B6C-9BF1-F1A8F5EC3A29}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB037E0F-6E52-4B6C-9BF1-F1A8F5EC3A29}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CB037E0F-6E52-4B6C-9BF1-F1A8F5EC3A29}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C21622D-11B4-4C20-8D36-9941A63DEB07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C21622D-11B4-4C20-8D36-9941A63DEB07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C21622D-11B4-4C20-8D36-9941A63DEB07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C21622D-11B4-4C20-8D36-9941A63DEB07}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

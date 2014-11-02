@@ -81,9 +81,8 @@ namespace Babbacombe.Webserver {
                 return;
             }
 
-            var url = Context.Request.Url;
-            string fname;
-            if (string.IsNullOrWhiteSpace(url.AbsolutePath) || url.AbsolutePath == "/") {
+            string fname = Server.GetFilenameFromRequest(Context.Request.Url);
+            if (fname == null) {
                 fname = getDefaultFilename();
                 if (fname == null) {
                     Context.Response.StatusCode = 404;
@@ -92,7 +91,7 @@ namespace Babbacombe.Webserver {
                     return;
                 }
             } else {
-                fname = ConstructFilename(url.AbsolutePath);
+                fname = ConstructFilename(fname);
             }
             Context.Response.StatusCode = 200;
             SendFile(fname);

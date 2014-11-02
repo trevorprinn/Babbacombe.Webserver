@@ -28,7 +28,9 @@ namespace SimplePageTest {
     }
 
     class HttpRPiTemperatureSession : HttpSession {
-        //private int _temp = 1;
+#if NORPI
+        private int _temp = 1;
+#endif
 
         protected override void Respond() {
             if (QueryItems.Any(q => q.Name == "update")) {
@@ -49,10 +51,13 @@ namespace SimplePageTest {
         }
 
         private decimal getTemperature() {
-            //return _temp++;
+#if NORPI
+            return _temp++;
+#else
             using (var s = new StreamReader("/sys/class/thermal/thermal_zone0/temp")) {
                 return Convert.ToDecimal(s.ReadLine()) / 1000m;
             }
+#endif
         }
     }
 }
