@@ -29,7 +29,7 @@ namespace Babbacombe.Webserver {
         public string BaseFolder { get; set; }
         
         /// <summary>
-        /// Whether exceptions in background threads are thrown. Defaults to false (ie, they are thrown).
+        /// Whether exceptions in background threads are thrown. Defaults to true (ie, they are not thrown).
         /// </summary>
         /// <remarks>
         /// These exceptions are passed out in Exception events regardless of how this is set.
@@ -97,6 +97,8 @@ namespace Babbacombe.Webserver {
             SessionsExpiryInterval = new TimeSpan(0, 5, 0);
 
             DefaultFilenames = new List<string>(new string[] { "index.htm", "Index.htm", "index.html", "Index.html" });
+
+            TrapExceptions = true;
         }
 
         /// <summary>
@@ -192,7 +194,12 @@ namespace Babbacombe.Webserver {
                 // Default the return type.
                 context.Response.ContentType = "text/html";
                 // Get the response from the session.
-                session.Respond();
+                try {
+                    session.Respond();
+                } catch (Exception ex) {
+                    session.OnRespondException(new HttpRespondException(ex));
+                    OnException(ex);
+                }
 
                 // If this session is to be saved, add it to the cache if it's not already there.
                 lock (_cachedSessions) {

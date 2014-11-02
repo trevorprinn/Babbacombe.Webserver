@@ -85,9 +85,7 @@ namespace Babbacombe.Webserver {
             if (fname == null) {
                 fname = getDefaultFilename();
                 if (fname == null) {
-                    Context.Response.StatusCode = 404;
-                    Context.Response.StatusDescription = "File not found";
-                    Response = "<html><body>404 - File not found</body></html>";
+                    new HttpErrorPage(this, 404, "File not found").Send();
                     return;
                 }
             } else {
@@ -166,9 +164,7 @@ namespace Babbacombe.Webserver {
         /// </remarks>
         public void SendFile(string filename) {
             if (!File.Exists(filename)) {
-                Context.Response.StatusCode = 404;
-                Context.Response.StatusDescription = "File not found";
-                Response = "<html><body>404 - File not found</body></html>";
+                new HttpErrorPage(this, 404, "File not found").Send();
                 return;
             }
             using (var f = new FileStream(filename, FileMode.Open, FileAccess.Read)) {
@@ -267,6 +263,20 @@ namespace Babbacombe.Webserver {
             Context.Response.Headers.Set("Location", url.ToString());
             Context.Response.StatusCode = 303;
         }
+
+        /// <summary>
+        /// Called if an untrapped exception occurs within a Respond method.
+        /// </summary>
+        /// <param name="ex"></param>
+        protected internal virtual void OnRespondException(HttpRespondException ex) {
+            var errPage = new HttpErrorPage(this, ex.ToString());
+            errPage.Send();
+        }
+    }
+
+    [Serializable]
+    public class HttpRespondException : ApplicationException {
+        public HttpRespondException(Exception ex) : base("An exception has occurred within the session's Respond method", ex) { }
     }
 
     /// <summary>

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using System.Xml.XPath;
 
 namespace Babbacombe.Webserver {
     
@@ -11,6 +12,9 @@ namespace Babbacombe.Webserver {
     /// Manages a template page to be sent back in a response from a request handler. The base class is a thin
     /// wrapper around an XDocument with some methods to make it easy to change tagged elements or their values.
     /// </summary>
+    /// <remarks>
+    /// This class assumes that all the markup is in lower case.
+    /// </remarks>
     public class HttpPage : XDocument {
         /// <summary>
         /// The session that has created the page.
@@ -80,7 +84,7 @@ namespace Babbacombe.Webserver {
         /// <param name="tagname">The tag (attribute name) to search for. Defaults to DefaultTagName, normally "id".</param>
         public void ReplaceValue(string tag, string text, string tagname = null) {
             foreach (var element in GetTaggedElements(tag, tagname)) {
-                element.Value = text;
+                element.Value = text ?? "";
             }
         }
 
@@ -95,5 +99,48 @@ namespace Babbacombe.Webserver {
                 element.ReplaceWith(replacement);
             }
         }
+
+        public string Title {
+            get {
+                var ns = Root.GetDefaultNamespace();
+                var title = ((IEnumerable<XElement>)Root.XPathEvaluate("head/title")).FirstOrDefault();
+                if (title != null) return title.Value;
+                var head = Root.Element(ns + "head");
+                if (head == null) return null;
+                title = head.Element(ns + "title");
+                if (title == null) return null;
+                return title.Value;
+            }
+            set {
+                var ns = Root.GetDefaultNamespace();
+                var head = Root.Element(ns + "head");
+                if (head == null) Root.AddFirst(head = new XElement("head"));
+                var title = head.Element(ns + "title");
+                if (title == null) head.Add(title = new XElement("title"));
+                title.Value = value;
+            }
+        }
+    }
+
+    public class HttpErrorPage : HttpPage {
+        public HttpErrorPage(HttpSession session, int status, string error, string description = null, string details = null) 
+            : base(getDoc(), session) {
+                Title = error;
+                ReplaceValue("error", error);
+                ReplaceValue("status", status.ToString());
+                ReplaceValue("description", string.IsNullOrEmpty(description) ? error : description);
+                ReplaceValue("details", details);
+                session.Context.Response.StatusCode = status;
+                session.Context.Response.StatusDescription = error;
+        }
+
+        public HttpErrorPage(HttpSession session, string details) : this(session, 500, "Internal Server Error", null, details) { }
+
+        private static XDocument getDoc() {
+            using (var s = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("Babbacombe.Webserver.DefaultErrorPage.html"))) {
+                return XDocument.Parse(s.ReadToEnd());
+            }
+        }
     }
 }
+
