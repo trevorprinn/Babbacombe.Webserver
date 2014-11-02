@@ -41,6 +41,13 @@ namespace AppTest.App1 {
         public void Identify() {
             Session.Response = "<html><body>You called App1</body></html>";
         }
+
+        public void Redirect() {
+            var url = new UriBuilder(Session.Context.Request.Url);
+            url.Path = "App1/Redirected.html";
+            url.Query = null;
+            Session.Redirect(url.Uri);
+        }
     }
 }
 

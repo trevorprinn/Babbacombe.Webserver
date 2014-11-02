@@ -258,6 +258,15 @@ namespace Babbacombe.Webserver {
         internal DateTime ExpiresAt {
             get { return LastAccessed.Add(ExpiryTime); }
         }
+
+        public void Redirect(string url) {
+            Redirect(new Uri(url));
+        }
+
+        public void Redirect(Uri url) {
+            Context.Response.Headers.Set("Location", url.ToString());
+            Context.Response.StatusCode = 303;
+        }
     }
 
     /// <summary>
