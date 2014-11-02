@@ -76,6 +76,11 @@ namespace Babbacombe.Webserver {
         public List<string> DefaultFilenames { get; private set; }
 
         /// <summary>
+        /// If true, exceptions will be reported to the client with full details. Defaults to False (just sends internal server error).
+        /// </summary>
+        public bool RespondWithExceptionDetails { get; set; }
+
+        /// <summary>
         /// Creates a server that listens on a set of prefixes, as defined for HttpListener.
         /// </summary>
         /// <param name="prefixes"></param>
@@ -197,7 +202,7 @@ namespace Babbacombe.Webserver {
                 try {
                     session.Respond();
                 } catch (Exception ex) {
-                    session.OnRespondException(new HttpRespondException(ex));
+                    session.OnRespondException(ex is HttpRespondException ? (HttpRespondException)ex : new HttpRespondException(ex));
                     OnException(ex);
                 }
 

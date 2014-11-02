@@ -129,7 +129,7 @@ namespace Babbacombe.Webserver {
                 ReplaceValue("error", error);
                 ReplaceValue("status", status.ToString());
                 ReplaceValue("description", string.IsNullOrEmpty(description) ? error : description);
-                ReplaceValue("details", details);
+                if (session.Server.RespondWithExceptionDetails) ReplaceValue("details", details);
                 session.Context.Response.StatusCode = status;
                 session.Context.Response.StatusDescription = error;
         }

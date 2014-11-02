@@ -21,9 +21,10 @@ namespace AppTest {
             };
             using (var ws = new HttpAppServer(defs)) {
                 ws.TrackSessions = true;
-                ws.TrapExceptions = true;
+                ws.RespondWithExceptionDetails = true;
                 ws.Exception += (object sender, HttpServer.ExceptionEventArgs e) => {
                     Console.WriteLine(e.Ex.ToString());
+                    Console.WriteLine();
                 };
                 ws.Start();
                 Console.WriteLine("Webserver started");

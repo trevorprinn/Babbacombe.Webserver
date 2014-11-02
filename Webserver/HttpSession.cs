@@ -203,13 +203,23 @@ namespace Babbacombe.Webserver {
             string className = string.Format("{0}.{1}", HandlerNamespace, QueryItems.Single(i => i.Name == ClassParameter).Value);
             var handler = _handlers.SingleOrDefault(h => h.GetType().FullName == className);
             if (handler == null) {
-                var type = HandlerAssembly.GetType(className);
-                handler = (HttpRequestHandler)Activator.CreateInstance(type);
+                try {
+                    var type = HandlerAssembly.GetType(className);
+                    handler = (HttpRequestHandler)Activator.CreateInstance(type);
+                } catch (Exception ex) {
+                    throw new HttpUnknownHandlerException(className, ex);
+                }
                 _handlers.Add(handler);
             }
             handler.Session = this;
-            var method = handler.GetType().GetMethod(QueryItems.Single(i => i.Name == MethodParameter).Value);
-            method.Invoke(handler, null);
+            string methodName = null;
+            try {
+                methodName = QueryItems.Single(i => i.Name == MethodParameter).Value;
+                var method = handler.GetType().GetMethod(methodName);
+                method.Invoke(handler, null);
+            } catch (Exception ex) {
+                throw new HttpUnknownMethodException(className, methodName, ex);
+            }
         }
 
         /// <summary>
@@ -276,7 +286,20 @@ namespace Babbacombe.Webserver {
 
     [Serializable]
     public class HttpRespondException : ApplicationException {
+        public HttpRespondException(string message, Exception ex) : base(message, ex) { }
         public HttpRespondException(Exception ex) : base("An exception has occurred within the session's Respond method", ex) { }
+    }
+
+    [Serializable]
+    public class HttpUnknownHandlerException : HttpRespondException {
+        public HttpUnknownHandlerException(string handler, Exception ex)
+            : base(string.Format("Unable to create the requested handler '{0}'", handler), ex) { }
+    }
+
+    [Serializable]
+    public class HttpUnknownMethodException : HttpRespondException {
+        public HttpUnknownMethodException(string handler, string method, Exception ex)
+            : base(string.Format("Unable to run the requested method '{0}.{1}'", handler, method), ex) { }
     }
 
     /// <summary>
