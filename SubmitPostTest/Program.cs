@@ -22,9 +22,8 @@ namespace SubmitPostTest {
 
     class Handler : HttpRequestHandler {
         public void Submitted() {
-            var data = GetPostedItems().ToArray();
             var page = HttpPage.Create("reply.html", Session);
-            foreach (var item in data) {
+            foreach (var item in GetPostedItems()) {
                 page.ReplaceValue(item.Name, item.Value);
             }
             page.Send();

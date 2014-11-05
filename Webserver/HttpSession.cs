@@ -37,7 +37,7 @@ namespace Babbacombe.Webserver {
         /// <summary>
         /// The items in the Query string in the request url.
         /// </summary>
-        protected internal QueryItem[] QueryItems { get; private set; }
+        protected internal QueryItems QueryItems { get; private set; }
 
         // A cache of the request handler objects created by this session.
         private List<HttpRequestHandler> _handlers = new List<HttpRequestHandler>();
@@ -63,7 +63,7 @@ namespace Babbacombe.Webserver {
             get { return _context; }
             internal set {
                 _context = value;
-                QueryItems = QueryItem.GetItems(Context.Request.Url).ToArray();
+                QueryItems = QueryItems.Get(Context.Request.Url);
             }
         }
 
@@ -191,8 +191,7 @@ namespace Babbacombe.Webserver {
         /// </summary>
         /// <returns></returns>
         protected bool RequestHasMethod() {
-            var names = QueryItems.Select(i => i.Name);
-            return names.Contains(ClassParameter) && names.Contains(MethodParameter);
+            return QueryItems.Contains(ClassParameter) && QueryItems.Contains(MethodParameter);
         }
 
         /// <summary>
@@ -200,7 +199,7 @@ namespace Babbacombe.Webserver {
         /// called automatically by the base Respond method.
         /// </summary>
         protected void RunMethod() {
-            string className = string.Format("{0}.{1}", HandlerNamespace, QueryItems.Single(i => i.Name == ClassParameter).Value);
+            string className = string.Format("{0}.{1}", HandlerNamespace, QueryItems[ClassParameter]);
             var handler = _handlers.SingleOrDefault(h => h.GetType().FullName == className);
             if (handler == null) {
                 try {
@@ -214,7 +213,7 @@ namespace Babbacombe.Webserver {
             handler.Session = this;
             string methodName = null;
             try {
-                methodName = QueryItems.Single(i => i.Name == MethodParameter).Value;
+                methodName = QueryItems[MethodParameter];
                 var method = handler.GetType().GetMethod(methodName);
                 method.Invoke(handler, null);
             } catch (Exception ex) {
@@ -302,20 +301,16 @@ namespace Babbacombe.Webserver {
             : base(string.Format("Unable to run the requested method '{0}.{1}'", handler, method), ex) { }
     }
 
-    /// <summary>
-    /// A name and value passed either in the request url (see HttpSession.QueryItems
-    /// or HttpRequestHandler.GetArg) or in posted submit data
-    /// (see HttpRequestHandler.GetPostedItems).
-    /// </summary>
-    public class QueryItem {
-        public string Name { get; private set; }
-        public string Value { get; private set; }
+    public class QueryItems : IEnumerable<QueryItem> {
+        private QueryItem[] _items;
 
-        internal static IEnumerable<QueryItem> GetItems(Uri url) {
-            return GetItems(url.Query);
+        private QueryItems() { }
+
+        internal static QueryItems Get(Uri url) {
+            return Get(url.Query);
         }
 
-        internal static IEnumerable<QueryItem> GetItems(string query) {
+        internal static QueryItems Get(string query) {
             List<QueryItem> items = new List<QueryItem>();
             var qs = HttpUtility.ParseQueryString(query);
             for (int i = 0; i < qs.Count; i++) {
@@ -325,8 +320,34 @@ namespace Babbacombe.Webserver {
                 if (n == null) continue;
                 items.Add(new QueryItem { Name = n, Value = v });
             }
-            return items;
+            return new QueryItems { _items = items.ToArray() };
         }
+
+        public string this[string name] {
+            get {
+                var item = _items.FirstOrDefault(i => i.Name == name);
+                return item == null ? null : item.Value;
+            }
+        }
+
+        public IEnumerator<QueryItem> GetEnumerator() {
+            foreach (var item in _items) yield return item;
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
+            return _items.GetEnumerator();
+        }
+
+        public bool Contains(string name) { return _items.Any(i => i.Name == name); }
     }
 
+    /// <summary>
+    /// A name and value passed either in the request url (see HttpSession.QueryItems
+    /// or HttpRequestHandler.GetArg) or in posted submit data
+    /// (see HttpRequestHandler.GetPostedItems).
+    /// </summary>
+    public class QueryItem {
+        public string Name { get; internal set; }
+        public string Value { get; internal set; }
+    }
 }

@@ -33,7 +33,7 @@ namespace SimplePageTest {
 #endif
 
         protected override void Respond() {
-            if (QueryItems.Any(q => q.Name == "update")) {
+            if (QueryItems.Contains("update")) {
                 var data = new XElement("data", new XElement("temperature", new XAttribute("value", getTemperature().ToString("F02"))));
                 Context.Response.ContentType = "text/xml";
                 SetXmlResponse(data);

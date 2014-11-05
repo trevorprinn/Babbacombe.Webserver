@@ -21,18 +21,6 @@ namespace Babbacombe.Webserver {
         protected internal HttpSession Session { get; internal set; }
         
         /// <summary>
-        /// Gets the value of a query item from the request url.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        /// <remarks>
-        /// A convenient way of querying the session's QueryItems property.
-        /// </remarks>
-        protected string GetArg(string name) {
-            return Session.QueryItems.SingleOrDefault(i => i.Name == name).Value;
-        }
-
-        /// <summary>
         /// Get the folder containing template pages for this handler. Defaults to the 
         /// session's BaseFolder.
         /// </summary>
@@ -90,8 +78,8 @@ namespace Babbacombe.Webserver {
         /// Gets the posted submit data as a set of QueryItems.
         /// </summary>
         /// <returns></returns>
-        protected IEnumerable<QueryItem> GetPostedItems() {
-            return QueryItem.GetItems(ReadPostStream());
+        protected QueryItems GetPostedItems() {
+            return QueryItems.Get(ReadPostStream());
         }
 
     }
