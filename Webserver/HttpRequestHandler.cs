@@ -82,5 +82,9 @@ namespace Babbacombe.Webserver {
             return QueryItems.Get(ReadPostStream());
         }
 
+        protected QueryItems QueryItems {
+            get { return Session.QueryItems; }
+        }
+
     }
 }
