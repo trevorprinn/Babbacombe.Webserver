@@ -212,12 +212,13 @@ namespace Babbacombe.Webserver {
             }
             handler.Session = this;
             string methodName = null;
+            methodName = QueryItems[MethodParameter];
+            var method = handler.GetType().GetMethod(methodName);
+            if (method == null) throw new HttpUnknownMethodException(className, methodName);
             try {
-                methodName = QueryItems[MethodParameter];
-                var method = handler.GetType().GetMethod(methodName);
                 method.Invoke(handler, null);
             } catch (Exception ex) {
-                throw new HttpUnknownMethodException(className, methodName, ex);
+                throw new HttpHandlerMethodException(className, methodName, ex);
             }
         }
 
@@ -285,7 +286,7 @@ namespace Babbacombe.Webserver {
 
     [Serializable]
     public class HttpRespondException : ApplicationException {
-        public HttpRespondException(string message, Exception ex) : base(message, ex) { }
+        public HttpRespondException(string message, Exception ex = null) : base(message, ex) { }
         public HttpRespondException(Exception ex) : base("An exception has occurred within the session's Respond method", ex) { }
     }
 
@@ -297,8 +298,14 @@ namespace Babbacombe.Webserver {
 
     [Serializable]
     public class HttpUnknownMethodException : HttpRespondException {
-        public HttpUnknownMethodException(string handler, string method, Exception ex)
-            : base(string.Format("Unable to run the requested method '{0}.{1}'", handler, method), ex) { }
+        public HttpUnknownMethodException(string handler, string method)
+            : base(string.Format("Unable to run the requested method '{0}.{1}'", handler, method)) { }
+    }
+
+    [Serializable]
+    public class HttpHandlerMethodException : HttpRespondException {
+        public HttpHandlerMethodException(string handler, string method, Exception ex)
+            : base(string.Format("Exception within the requested method '{0}.{1}'", handler, method), ex) { }
     }
 
     public class QueryItems : IEnumerable<QueryItem> {

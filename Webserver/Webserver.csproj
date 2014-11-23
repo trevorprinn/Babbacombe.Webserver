@@ -46,6 +46,7 @@
     <Compile Include="HttpRequestHandler.cs" />
     <Compile Include="HttpServer.cs" />
     <Compile Include="HttpSession.cs" />
+    <Compile Include="MultipartForm.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
