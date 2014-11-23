@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Babbacombe.Webserver {
-    // Code found at http://multipartparser.codeplex.com/discussions/210676
+    // Modified from code found at http://multipartparser.codeplex.com/discussions/210676
 
     public abstract class PostedField {
         public string ContentType { get; set; }
@@ -79,7 +79,7 @@ namespace Babbacombe.Webserver {
 
         private static Dictionary<string, string> ParseProperties(string field) {
             Match propertiesMatch = Regex.Match(field.Substring(0, field.IndexOf("\r\n\r\n") + "\r\n\r\n".Length),
-                                                  @"(?:.*)\r\n((?<Key>[^\:=]+)(?:[\=\:])(?:[\s]*)(?<Value>[^;\s\r]+)(?:[;\s]*))+\r\n\r\n(?:.*)");
+                @"(?:.*)\r\n((?<Key>[^\:=]+)(?:[\=\:])(?:[\s]*)(?<Value>([^"";\s\r]+)|(""[^""]+""))(?:[;\s]*))+\r\n\r\n(?:.*)");
 
             var parsed = propertiesMatch.Groups["Key"].Captures.Cast<Capture>().Select((c, i) => new { c, i })
                 .Join(propertiesMatch.Groups["Value"].Captures.Cast<Capture>().Select((c, i) => new { c, i }), key => key.i, value => value.i,
