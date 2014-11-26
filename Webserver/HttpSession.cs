@@ -17,6 +17,7 @@ namespace Babbacombe.Webserver {
     /// TrackSessions property to true).
     /// </summary>
     public class HttpSession {
+
         // The current context. NB This changes with each request that is received.
         private HttpListenerContext _context;
         
@@ -65,6 +66,15 @@ namespace Babbacombe.Webserver {
                 _context = value;
                 QueryItems = QueryItems.Get(Context.Request.Url);
             }
+        }
+
+        /// <summary>
+        /// Raised after the session has been created and populated by the Server.
+        /// </summary>
+        public event EventHandler Created;
+
+        protected internal virtual void OnCreated() {
+            if (Created != null) Created(this, EventArgs.Empty);
         }
 
         /// <summary>

@@ -62,7 +62,7 @@ namespace Babbacombe.Webserver {
         public TimeSpan SessionsExpiryTime { get; set; }
 
         /// <summary>
-        /// How often to check for expired sessions. Defaults to 5 minutes.
+        /// How often to check for expired sessions. Defaults to 5 minutes. Must be set before starting the server.
         /// </summary>
         public TimeSpan SessionsExpiryInterval { get; set; }
 
@@ -134,9 +134,9 @@ namespace Babbacombe.Webserver {
         public IEnumerable<string> Prefixes { get { return Listener.Prefixes; } }
 
         /// <summary>
-        /// True if the server has been started, and is not current stopped.
+        /// True if the server has been started, and is not currently stopped.
         /// </summary>
-        public bool Running { get { return Listener.IsListening; } }
+        public bool Running { get { return Listener != null && Listener.IsListening; } }
 
         /// <summary>
         /// Starts the server listening.
@@ -170,6 +170,7 @@ namespace Babbacombe.Webserver {
             using (var expiryTimer = new System.Timers.Timer()) {
                 expiryTimer.Interval = SessionsExpiryInterval.TotalMilliseconds;
                 expiryTimer.Elapsed += expiryTimer_Elapsed;
+                expiryTimer.Start();
 
                 while (Running) {
                     try {
@@ -268,6 +269,7 @@ namespace Babbacombe.Webserver {
                     // Create a cookie if required.
                     session.CreateSessionId();
                 }
+                session.OnCreated();
             } else {
                 session.Context = context;
             }
