@@ -41,14 +41,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileUploadManager.cs" />
     <Compile Include="HttpAppServer.cs" />
     <Compile Include="HttpPage.cs" />
     <Compile Include="HttpRequestHandler.cs" />
     <Compile Include="HttpServer.cs" />
     <Compile Include="HttpSession.cs" />
-    <Compile Include="MultipartForm.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TextBinaryReader.cs" />
+    <Compile Include="UploadStream.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="DefaultErrorPage.html" />

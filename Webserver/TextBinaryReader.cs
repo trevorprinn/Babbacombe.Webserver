@@ -14,6 +14,11 @@ namespace Babbacombe.Webserver {
     /// </summary>
     internal class TextBinaryReader : IDisposable {
         private BufferedStream _stream;
+
+        /// <summary>
+        /// True when the end of the stream has been reached. When reading binary there
+        /// could still be buffered (pushed back) data to be sent.
+        /// </summary>
         public bool EndOfStream { get; private set; }
         private Queue<int> _pushBackBuffer = new Queue<int>();
 
@@ -37,8 +42,10 @@ namespace Babbacombe.Webserver {
             int ch = _stream.ReadByte();
             while (ch >= 0 && ch != '\n') {
                 buf.Append((char)ch);
+                ch = _stream.ReadByte();
             }
             if (ch < 0) EndOfStream = true;
+            if (EndOfStream && buf.Length == 0) return null;
             while (buf.Length > 0 && buf[buf.Length - 1] == '\r') buf.Length--;
             return buf.ToString();
         }
@@ -64,7 +71,7 @@ namespace Babbacombe.Webserver {
             if (delimiter.Contains('\r') || delimiter.Contains('\n')) throw new ArgumentException(@"Delimiter cannot contain \r or \n");
 
             delimiterReached = false;
-            if (EndOfStream) return 0;
+            if (EndOfStream && !_pushBackBuffer.Any()) return 0;
             
             List<int> delimiterBuffer = new List<int>();
             int delimCount = 0; // Count of how many delimiter characters have been read and matched (not inc \r\n)
@@ -74,22 +81,19 @@ namespace Babbacombe.Webserver {
                 if (ch < 0) {
                     EndOfStream = true;
                     if (delimiterBuffer.Any()) {
-                        // Send any delimiter data that has been held aside.
-                        int cnt = Math.Min(delimiterBuffer.Count, count - bytesRead);
-                        delimiterBuffer.ConvertAll(c => (byte)c).CopyTo(0, buffer, offset + bytesRead, cnt);
-                        delimiterBuffer.RemoveRange(0, cnt);
-                        return bytesRead + cnt;                        
+                        // Push back any delimiter data that has been held aside.
+                        pushback(delimiterBuffer);
+                        delimCount = 0;
+                        continue;
                     }
                 }
-                if (!_pushBackBuffer.Any() && ch == '\n' || ch == '\r') {
+                if (!_pushBackBuffer.Any() && (ch == '\n' || ch == '\r')) {
                     if (delimCount == 0) {
                         // Possibly at or near start of delimiter
                         delimiterBuffer.Add(ch);
                     } else {
                         // End of line reached without matching the delimiter
-                        foreach (int c in delimiterBuffer) _pushBackBuffer.Enqueue(c);
-                        delimiterBuffer.Clear();
-                        _pushBackBuffer.Enqueue(ch);
+                        pushback(delimiterBuffer, ch);
                         delimCount = 0;
                     }
                     continue;
@@ -104,9 +108,7 @@ namespace Babbacombe.Webserver {
                         }
                     } else {
                         // Doesn't match the delimiter - push what has been saved back on for normal processing
-                        foreach (int c in delimiterBuffer) _pushBackBuffer.Enqueue(c);
-                        delimiterBuffer.Clear();
-                        _pushBackBuffer.Enqueue(ch);
+                        pushback(delimiterBuffer);
                         delimCount = 0;
                     }
                 } else {
@@ -118,7 +120,14 @@ namespace Babbacombe.Webserver {
 
         private int getNextByte() {
             if (_pushBackBuffer.Any()) return _pushBackBuffer.Dequeue();
+            if (EndOfStream) return -1;
             return _stream.ReadByte();
+        }
+
+        private void pushback(List<int> data, int ch = -1) {
+            foreach (int c in data) _pushBackBuffer.Enqueue(c);
+            data.Clear();
+            if (ch >= 0) _pushBackBuffer.Enqueue(ch);
         }
 
         public void Dispose() {
