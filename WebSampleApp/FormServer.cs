@@ -13,9 +13,12 @@ using Babbacombe.Webserver;
 namespace Babbacombe.WebSampleApp {
     public partial class FormServer : Form {
         private HttpAppServer _server;
+        public static FormServer Instance { get; private set; }
 
         public FormServer() {
             InitializeComponent();
+
+            Instance = this;
 
             LogFile.Log("Started: {0}", Application.ProductVersion.ToString());
 
@@ -31,11 +34,10 @@ namespace Babbacombe.WebSampleApp {
                     LogFile.Log("Server disposed");
                 }
             };
-            _server.SessionType = typeof(HttpSession);
             _server.TrackSessions = true;
+            // Check for expiry every 10 secs, rather than 5 mins.
+            _server.SessionsExpiryInterval = new TimeSpan(0, 0, 10);
             _server.Exception += _server_Exception;
-
-            CreateHandle();
 
             LogFile.Log("Server started");
             _server.Start();

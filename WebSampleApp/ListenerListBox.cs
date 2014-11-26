@@ -19,7 +19,10 @@ namespace Babbacombe.WebSampleApp {
         public ListenerListBox() {
             InitializeComponent();
 
+            // Create the handle here to ensure that InvokeRequired works
+            // before the form is shown.
             CreateHandle();
+
             _listener = new Listener(this);
             Disposed += (s, e) => {
                 if (_listener != null) {
