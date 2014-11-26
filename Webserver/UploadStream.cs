@@ -25,7 +25,17 @@ namespace Babbacombe.Webserver {
 
         public override bool CanWrite { get { return false; } }
 
-        public override void Flush() { }
+        /// <summary>
+        /// Reads to the end of the stream (so the position in the TextBinaryReader is at 
+        /// the start of the next data item.
+        /// </summary>
+        public override void Flush() {
+            byte[] buf = null;
+            while (!EndOfStream) {
+                if (buf == null) buf = new byte[4096];
+                Read(buf, 0, 4096);
+            }
+        }
 
         public override long Length {
             get { throw new NotImplementedException(); }
