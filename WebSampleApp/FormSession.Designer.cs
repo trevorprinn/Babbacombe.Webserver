@@ -27,6 +27,7 @@
             this.numExpiry = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
             this.labelHost = new System.Windows.Forms.Label();
+            this.listUrls = new System.Windows.Forms.ListBox();
             ((System.ComponentModel.ISupportInitialize)(this.numExpiry)).BeginInit();
             this.SuspendLayout();
             // 
@@ -66,11 +67,22 @@
             // labelHost
             // 
             this.labelHost.AutoSize = true;
-            this.labelHost.Location = new System.Drawing.Point(175, 7);
+            this.labelHost.Location = new System.Drawing.Point(185, 7);
             this.labelHost.Name = "labelHost";
             this.labelHost.Size = new System.Drawing.Size(16, 13);
             this.labelHost.TabIndex = 3;
             this.labelHost.Text = "...";
+            // 
+            // listUrls
+            // 
+            this.listUrls.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.listUrls.FormattingEnabled = true;
+            this.listUrls.Location = new System.Drawing.Point(9, 31);
+            this.listUrls.Name = "listUrls";
+            this.listUrls.Size = new System.Drawing.Size(409, 43);
+            this.listUrls.TabIndex = 4;
             // 
             // FormSession
             // 
@@ -78,6 +90,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(430, 268);
             this.ControlBox = false;
+            this.Controls.Add(this.listUrls);
             this.Controls.Add(this.labelHost);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.numExpiry);
@@ -96,5 +109,6 @@
         private System.Windows.Forms.NumericUpDown numExpiry;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label labelHost;
+        private System.Windows.Forms.ListBox listUrls;
     }
 }

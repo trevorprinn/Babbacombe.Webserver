@@ -23,5 +23,17 @@ namespace Babbacombe.WebSampleApp.Test {
         private void numExpiry_ValueChanged(object sender, EventArgs e) {
             _session.ExpireSecs = (int)numExpiry.Value;
         }
+
+        public void AddUrl(Uri url, string method) {
+            if (InvokeRequired) {
+                BeginInvoke(new Action<Uri, string>(AddUrl), url, method);
+                return;
+            }
+            // Autoscroll the list box if it is showing the last url.
+            int visibleCount = listUrls.ClientSize.Height / listUrls.ItemHeight;
+            bool autoScroll = listUrls.TopIndex + visibleCount >= listUrls.Items.Count;
+            listUrls.Items.Add(string.Format("{0} {1}", url, method));
+            if (autoScroll) listUrls.TopIndex++;
+        }
     }
 }

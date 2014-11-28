@@ -22,6 +22,11 @@ namespace Babbacombe.WebSampleApp.Test {
             }));
         }
 
+        protected override void Respond() {
+            _form.AddUrl(Context.Request.Url, Context.Request.HttpMethod);
+            base.Respond();
+        }
+
         protected override TimeSpan ExpiryTime {
             get { return _expiryTime; }
         }
