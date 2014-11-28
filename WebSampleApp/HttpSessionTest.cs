@@ -15,7 +15,7 @@ namespace Babbacombe.WebSampleApp.Test {
         protected override void OnCreated() {
             base.OnCreated();
             _expiryTime = base.ExpiryTime;
-            FormServer.Instance.BeginInvoke(new Action(() => {
+            FormServer.Instance.Invoke(new Action(() => {
                 _form = new FormSession(this);
                 _form.Text = "Session: " + SessionId;
                 _form.Show();
@@ -33,7 +33,7 @@ namespace Babbacombe.WebSampleApp.Test {
 
         public void Dispose() {
             if (_form != null) {
-                _form.BeginInvoke(new Action(() => {
+                _form.Invoke(new Action(() => {
                     _form.Dispose();
                     _form = null;
                 }));

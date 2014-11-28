@@ -17,6 +17,7 @@ namespace Babbacombe.WebSampleApp.Test {
 
             _session = session;
             numExpiry.Value = _session.ExpireSecs;
+            labelHost.Text = _session.Context.Request.UserHostName;
         }
 
         private void numExpiry_ValueChanged(object sender, EventArgs e) {

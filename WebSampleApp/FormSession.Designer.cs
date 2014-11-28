@@ -26,6 +26,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.numExpiry = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
+            this.labelHost = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.numExpiry)).BeginInit();
             this.SuspendLayout();
             // 
@@ -62,12 +63,22 @@
             this.label2.TabIndex = 2;
             this.label2.Text = "secs";
             // 
+            // labelHost
+            // 
+            this.labelHost.AutoSize = true;
+            this.labelHost.Location = new System.Drawing.Point(175, 7);
+            this.labelHost.Name = "labelHost";
+            this.labelHost.Size = new System.Drawing.Size(16, 13);
+            this.labelHost.TabIndex = 3;
+            this.labelHost.Text = "...";
+            // 
             // FormSession
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(430, 268);
             this.ControlBox = false;
+            this.Controls.Add(this.labelHost);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.numExpiry);
             this.Controls.Add(this.label1);
@@ -84,5 +95,6 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.NumericUpDown numExpiry;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label labelHost;
     }
 }
