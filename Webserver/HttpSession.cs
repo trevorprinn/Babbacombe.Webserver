@@ -94,10 +94,6 @@ namespace Babbacombe.Webserver {
             string fname = Server.GetFilenameFromRequest(Context.Request.Url);
             if (fname == null) {
                 fname = getDefaultFilename();
-                if (fname == null) {
-                    new HttpErrorPage(this, 404, "File not found").Send();
-                    return;
-                }
             } else {
                 fname = ConstructFilename(fname);
             }
@@ -173,13 +169,40 @@ namespace Babbacombe.Webserver {
         /// should be left null).
         /// </remarks>
         public void SendFile(string filename) {
-            if (!File.Exists(filename)) {
+            var details = OnFileRequested(filename);
+
+            if (details.Contents != null || details.Document != null) {
+                Response = details.Contents != null ? details.Contents : details.Document.ToString();
+                return;
+            }
+            
+            if (details.Stream != null) {
+                details.Stream.CopyTo(Context.Response.OutputStream);
+                return;
+            }
+
+            if (filename == null || !File.Exists(filename)) {
                 new HttpErrorPage(this, 404, "File not found").Send();
                 return;
             }
             using (var f = new FileStream(filename, FileMode.Open, FileAccess.Read)) {
                 f.CopyTo(Context.Response.OutputStream);
             }
+        }
+
+        public class FileRequestedEventArgs : EventArgs {
+            public string Filename { get; set; }
+            public string Contents { get; set; }
+            public Stream Stream { get; set; }
+            public XDocument Document { get; set; }
+            public bool Handled { get { return Contents != null || Stream != null || Document != null; } }
+        }
+        public event EventHandler<FileRequestedEventArgs> FileRequested;
+
+        protected virtual FileRequestedEventArgs OnFileRequested(string filename) {
+            var ea = new FileRequestedEventArgs { Filename = filename };
+            if (FileRequested != null) FileRequested(this, ea);
+            return ea;
         }
 
         /// <summary>

@@ -30,7 +30,7 @@ namespace Babbacombe.Webserver {
 
         /// <summary>
         /// Creates an HttpPage from an existing XDocument. Normally, HttpPage.Create should
-        /// instead be used to load an initialise a page.
+        /// instead be used to load and initialise a page.
         /// </summary>
         /// <param name="data"></param>
         /// <param name="session"></param>

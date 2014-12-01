@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Linq;
 
 using Babbacombe.Webserver;
 
@@ -41,6 +43,21 @@ namespace Babbacombe.WebSampleApp.Exercise {
                 _form.Invoke(new Action(() => _form.Close()));
                 _form.Dispose();
                 _form = null;
+            }
+        }
+
+        protected override FileRequestedEventArgs OnFileRequested(string filename) {
+            var ea = base.OnFileRequested(filename);
+            if (ea.Handled) return ea;
+            if (ea.Filename == Path.Combine(BaseFolder, "index.html")) {
+                ea.Document = HttpPage.Create(ea.Filename, this, typeof(IndexPage));
+            }
+            return ea;
+        }
+
+        private class IndexPage : HttpPage {
+            public IndexPage(XDocument data, HttpSession session) : base(data, session) {
+                ReplaceValue("session", session.SessionId);
             }
         }
     }

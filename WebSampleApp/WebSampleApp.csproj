@@ -104,6 +104,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Exercise\index.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Uploader\index.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
