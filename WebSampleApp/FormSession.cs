@@ -56,5 +56,23 @@ namespace Babbacombe.WebSampleApp.Exercise {
             }
             return new string[] { textItem1.Text, textItem2.Text, textItem3.Text };
         }
+
+        public IEnumerable<string> GetClientValues() {
+            if (InvokeRequired) {
+                return (IEnumerable<string>)Invoke(new Func<IEnumerable<string>>(GetClientValues));
+            }
+            return new string[] { textClient1.Text, textClient2.Text, textClient3.Text };
+        }
+
+        public void ShowClientValues(IEnumerable<string> vals) {
+            if (InvokeRequired) {
+                BeginInvoke(new Action<IEnumerable<string>>(ShowClientValues), vals);
+                return;
+            }
+            var values = vals.ToArray();
+            if (values.Length > 0) textClient1.Text = values[0];
+            if (values.Length > 1) textClient2.Text = values[1];
+            if (values.Length > 2) textClient3.Text = values[2];
+        }
     }
 }

@@ -58,12 +58,29 @@ namespace Babbacombe.WebSampleApp.Exercise {
         private class IndexPage : HttpPage {
             public IndexPage(XDocument data, HttpSession session) : base(data, session) {
                 ReplaceValue("session", session.SessionId);
+                var vals = session.GetServerValues().ToArray();
+                ReplaceValue("item1", vals[0]);
+                ReplaceValue("item2", vals[1]);
+                ReplaceValue("item3", vals[2]);
+                vals = session.GetClientValues().ToArray();
+                ReplaceAttribute("get1", "value", vals[0], "name");
+                ReplaceAttribute("get2", "value", vals[1], "name");
+                ReplaceAttribute("get3", "value", vals[2], "name");
             }
         }
 
         public IEnumerable<string> GetServerValues() {
             if (_form == null) return null;
             return _form.GetServerValues();
+        }
+
+        public IEnumerable<string> GetClientValues() {
+            if (_form == null) return null;
+            return _form.GetClientValues();
+        }
+
+        public void ShowClientValues(IEnumerable<string> values) {
+            if (_form != null) _form.ShowClientValues(values);
         }
     }
 
@@ -78,6 +95,14 @@ namespace Babbacombe.WebSampleApp.Exercise {
                     new XAttribute("id", "item" + (i++).ToString()), new XAttribute("value", item)));
             }
             Session.SetXmlResponse(response);
+        }
+
+        public void Posted() {
+            var vals = GetPostedItems();
+            var values = new string[] { vals["get1"], vals["get2"], vals["get3"] };
+            Session.ShowClientValues(values);
+            var url = Session.Context.Request.Url;
+            Session.Redirect(new UriBuilder(url.Scheme, url.Host, url.Port, url.AbsolutePath).Uri);
         }
     }
 }

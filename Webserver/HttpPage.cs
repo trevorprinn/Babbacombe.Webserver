@@ -100,6 +100,24 @@ namespace Babbacombe.Webserver {
             }
         }
 
+        /// <summary>
+        /// Replaces an attribute value for all the elements that have a tag matching a particular value.
+        /// </summary>
+        /// <param name="tag">The value to search for.</param>
+        /// <param name="attribute">The attribute to add or replace.</param>
+        /// <param name="text"></param>
+        /// <param name="tagname">The tag (attribute name) to search for. Defaults to DefaultTagName, normally "id".</param>
+        public void ReplaceAttribute(string tag, string attribute, string text, string tagname = null) {
+            foreach (var element in GetTaggedElements(tag, tagname)) {
+                var attr = element.Attribute(attribute);
+                if (attr == null) {
+                    element.Add(new XAttribute(attribute, text ?? ""));
+                } else {
+                    attr.Value = text ?? "";
+                }
+            }
+        }
+
         public string Title {
             get {
                 var ns = Root.GetDefaultNamespace();
