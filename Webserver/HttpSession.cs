@@ -178,6 +178,7 @@ namespace Babbacombe.Webserver {
             
             if (details.Stream != null) {
                 details.Stream.CopyTo(Context.Response.OutputStream);
+                if (!details.LeaveStream) details.Stream.Dispose();
                 return;
             }
 
@@ -194,6 +195,7 @@ namespace Babbacombe.Webserver {
             public string Filename { get; set; }
             public string Contents { get; set; }
             public Stream Stream { get; set; }
+            public bool LeaveStream { get; set; }
             public XDocument Document { get; set; }
             public bool Handled { get { return Contents != null || Stream != null || Document != null; } }
         }
