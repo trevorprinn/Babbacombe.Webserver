@@ -23,7 +23,7 @@ namespace Babbacombe.WebSampleApp {
             LogFile.Log("Started: {0}", Application.ProductVersion.ToString());
 
             var appDefs = new HttpApplicationDef[] {
-                new HttpApplicationDef("test", typeof(Test.HttpSession), 80, "Test"),
+                new HttpApplicationDef("exercise", typeof(Exercise.HttpSession), 80, "Exercise"),
                 new HttpApplicationDef("uploader", typeof(Uploader.HttpSession), 80, "Uploader")
             };
             _server = new HttpAppServer(appDefs);

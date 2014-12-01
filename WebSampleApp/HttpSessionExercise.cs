@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 using Babbacombe.Webserver;
 
-namespace Babbacombe.WebSampleApp.Test {
+namespace Babbacombe.WebSampleApp.Exercise {
     class HttpSession : Babbacombe.Webserver.HttpSession, IDisposable {
         private TimeSpan _expiryTime;
         private FormSession _form;

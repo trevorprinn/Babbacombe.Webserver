@@ -1,4 +1,4 @@
-﻿namespace Babbacombe.WebSampleApp.Test {
+﻿namespace Babbacombe.WebSampleApp.Exercise {
     partial class FormSession {
         /// <summary>
         /// Required designer variable.

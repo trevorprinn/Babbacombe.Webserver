@@ -57,7 +57,7 @@
     <Compile Include="FormSession.Designer.cs">
       <DependentUpon>FormSession.cs</DependentUpon>
     </Compile>
-    <Compile Include="HttpSessionTest.cs" />
+    <Compile Include="HttpSessionExercise.cs" />
     <Compile Include="HttpSessionUploader.cs" />
     <Compile Include="ListenerListBox.cs">
       <SubType>Component</SubType>

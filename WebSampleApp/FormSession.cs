@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Babbacombe.WebSampleApp.Test {
+namespace Babbacombe.WebSampleApp.Exercise {
     partial class FormSession : Form {
         private HttpSession _session;
 
