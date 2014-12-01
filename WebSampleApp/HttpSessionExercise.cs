@@ -60,5 +60,24 @@ namespace Babbacombe.WebSampleApp.Exercise {
                 ReplaceValue("session", session.SessionId);
             }
         }
+
+        public IEnumerable<string> GetServerValues() {
+            if (_form == null) return null;
+            return _form.GetServerValues();
+        }
+    }
+
+    class Updates : HttpRequestHandler {
+        private new HttpSession Session { get { return (HttpSession)base.Session; } }
+
+        public void Get() {
+            var response = new XElement("updates");
+            var i = 1;
+            foreach (var item in Session.GetServerValues()) {
+                response.Add(new XElement("update",
+                    new XAttribute("id", "item" + (i++).ToString()), new XAttribute("value", item)));
+            }
+            Session.SetXmlResponse(response);
+        }
     }
 }

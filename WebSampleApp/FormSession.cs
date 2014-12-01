@@ -35,5 +35,12 @@ namespace Babbacombe.WebSampleApp.Exercise {
             listUrls.Items.Add(string.Format("{0} {1}", url, method));
             if (autoScroll) listUrls.TopIndex++;
         }
+
+        public IEnumerable<string> GetServerValues() {
+            if (InvokeRequired) {
+                return (IEnumerable<string>)Invoke(new Func<IEnumerable<string>>(GetServerValues));
+            }
+            return new string[] { textItem1.Text, textItem2.Text, textItem3.Text };
+        }
     }
 }
