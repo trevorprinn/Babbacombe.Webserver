@@ -13,6 +13,10 @@
             if (disposing && (components != null)) {
                 components.Dispose();
             }
+            if (disposing && (_listener != null)) {
+                _listener.Dispose();
+                _listener = null;
+            }
             base.Dispose(disposing);
         }
 

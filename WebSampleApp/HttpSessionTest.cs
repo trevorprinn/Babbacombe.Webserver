@@ -38,10 +38,9 @@ namespace Babbacombe.WebSampleApp.Test {
 
         public void Dispose() {
             if (_form != null) {
-                _form.Invoke(new Action(() => {
-                    _form.Dispose();
-                    _form = null;
-                }));
+                _form.Invoke(new Action(() => _form.Close()));
+                _form.Dispose();
+                _form = null;
             }
         }
     }

@@ -13,6 +13,11 @@
             if (disposing && (components != null)) {
                 components.Dispose();
             }
+            if (disposing && _server != null) {
+                _server.Dispose();
+                _server = null;
+                LogFile.Log("Server disposed");
+            }
             base.Dispose(disposing);
         }
 

@@ -13,7 +13,7 @@ namespace Babbacombe.WebSampleApp {
     /// <summary>
     /// A list box that displays the first line of any Trace messages.
     /// </summary>
-    public partial class ListenerListBox : ListBox {
+    partial class ListenerListBox : ListBox {
         private Listener _listener;
 
         public ListenerListBox() {
@@ -24,12 +24,6 @@ namespace Babbacombe.WebSampleApp {
             CreateHandle();
 
             _listener = new Listener(this);
-            Disposed += (s, e) => {
-                if (_listener != null) {
-                    _listener.Dispose();
-                    _listener = null;
-                }
-            };
         }
 
         private void displayMessage(string message) {
@@ -46,18 +40,19 @@ namespace Babbacombe.WebSampleApp {
         private class Listener : System.Diagnostics.TraceListener {
             private ListenerListBox _listBox;
             private StringBuilder _buf = new StringBuilder();
-            
+            private object _lock = new object();
+
             public Listener(ListenerListBox listBox) {
                 _listBox = listBox;
                 System.Diagnostics.Trace.Listeners.Add(this);
             }
 
             public override void Write(string message) {
-                lock (this) _buf.Append(message);
+                lock (_lock) _buf.Append(message);
             }
 
             public override void WriteLine(string message) {
-                lock (this) {
+                lock (_lock) {
                     if (_buf.Length > 0) message = _buf.ToString() + message;
                     _buf.Clear();
                     // Just take the first line.

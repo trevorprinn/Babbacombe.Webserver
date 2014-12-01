@@ -15,6 +15,7 @@ namespace Babbacombe.WebSampleApp {
     class LogFile : System.Diagnostics.TraceListener {
         private string _filename;
         private StringBuilder _buf = new StringBuilder();
+        private object _lock = new object();
 
         /// <summary>
         /// Creates a log file and makes it a trace listener.
@@ -34,11 +35,11 @@ namespace Babbacombe.WebSampleApp {
 
         public override void Write(string message) {
             // Store up any part lines until WriteLine is called.
-            lock (this) _buf.Append(message);
+            lock (_lock) _buf.Append(message);
         }
 
         public override void WriteLine(string message) {
-            lock (this) {
+            lock (_lock) {
                 using (var s = new StreamWriter(_filename, true)) {
                     s.WriteLine(string.Format("{0:dd/MM/yyyy HH:mm:ss} {1}{2}", DateTime.Now, _buf.ToString(), message));
                     _buf.Clear();
