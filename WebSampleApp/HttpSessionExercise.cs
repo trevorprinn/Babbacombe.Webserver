@@ -57,15 +57,16 @@ namespace Babbacombe.WebSampleApp.Exercise {
 
         private class IndexPage : HttpPage {
             public IndexPage(XDocument data, HttpSession session) : base(data, session) {
+                DefaultTagName = "name";
                 ReplaceValue("session", session.SessionId);
                 var vals = session.GetServerValues().ToArray();
                 ReplaceValue("item1", vals[0]);
                 ReplaceValue("item2", vals[1]);
                 ReplaceValue("item3", vals[2]);
                 vals = session.GetClientValues().ToArray();
-                ReplaceAttribute("get1", "value", vals[0], "name");
-                ReplaceAttribute("get2", "value", vals[1], "name");
-                ReplaceAttribute("get3", "value", vals[2], "name");
+                ReplaceValue("get1", vals[0]);
+                ReplaceValue("get2", vals[1]);
+                ReplaceValue("get3", vals[2]);
             }
         }
 
@@ -92,7 +93,7 @@ namespace Babbacombe.WebSampleApp.Exercise {
             var i = 1;
             foreach (var item in Session.GetServerValues()) {
                 response.Add(new XElement("update",
-                    new XAttribute("id", "item" + (i++).ToString()), new XAttribute("value", item)));
+                    new XAttribute("name", "item" + (i++).ToString()), new XAttribute("value", item)));
             }
             Session.SetXmlResponse(response);
         }

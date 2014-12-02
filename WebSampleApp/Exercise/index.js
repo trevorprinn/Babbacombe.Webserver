@@ -7,9 +7,10 @@
             datatype: 'xml',
             success: function (xml) {
                 $(xml).find('update').each(function () {
-                    var id = $(this).attr('id');
+                    var name = $(this).attr('name');
                     var val = $(this).attr('value');
-                    $('#' + id).text(val);
+                    var sel = "span[name='" + name + "']";
+                    $(sel).text(val);
                 })
             },
         })

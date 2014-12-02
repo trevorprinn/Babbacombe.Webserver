@@ -29,7 +29,7 @@ namespace Babbacombe.Webserver {
         private HttpPage() { }
 
         /// <summary>
-        /// Creates an HttpPage from an existing XDocument. Normally, HttpPage.Create should
+        /// Creates an HttpPage from an existing XDocument.HttpPage.Create can
         /// instead be used to load and initialise a page.
         /// </summary>
         /// <param name="data"></param>
@@ -77,14 +77,19 @@ namespace Babbacombe.Webserver {
         }
 
         /// <summary>
-        /// Replaces the values of all the elements that have a tag matching a particular value.
+        /// Replaces the values of all the elements that have a tag matching a particular value. For input
+        /// elements, the value attribute is set.
         /// </summary>
         /// <param name="tag">The value to search for.</param>
         /// <param name="text"></param>
         /// <param name="tagname">The tag (attribute name) to search for. Defaults to DefaultTagName, normally "id".</param>
         public void ReplaceValue(string tag, string text, string tagname = null) {
             foreach (var element in GetTaggedElements(tag, tagname)) {
-                element.Value = text ?? "";
+                if (element.Name.LocalName == "input") {
+                    element.SetAttributeValue("value", text);
+                } else {
+                    element.Value = text;
+                }
             }
         }
 
@@ -109,12 +114,7 @@ namespace Babbacombe.Webserver {
         /// <param name="tagname">The tag (attribute name) to search for. Defaults to DefaultTagName, normally "id".</param>
         public void ReplaceAttribute(string tag, string attribute, string text, string tagname = null) {
             foreach (var element in GetTaggedElements(tag, tagname)) {
-                var attr = element.Attribute(attribute);
-                if (attr == null) {
-                    element.Add(new XAttribute(attribute, text ?? ""));
-                } else {
-                    attr.Value = text ?? "";
-                }
+                element.SetAttributeValue(attribute, text);
             }
         }
 
@@ -132,10 +132,8 @@ namespace Babbacombe.Webserver {
             set {
                 var ns = Root.GetDefaultNamespace();
                 var head = Root.Element(ns + "head");
-                if (head == null) Root.AddFirst(head = new XElement("head"));
-                var title = head.Element(ns + "title");
-                if (title == null) head.Add(title = new XElement("title"));
-                title.Value = value;
+                if (head == null) Root.AddFirst(head = new XElement(ns + "head"));
+                head.SetElementValue(ns + "title", value);
             }
         }
     }
