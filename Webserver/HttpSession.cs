@@ -16,7 +16,7 @@ namespace Babbacombe.Webserver {
     /// from a single client if its SessionId has been set (normally done by setting the servers
     /// TrackSessions property to true).
     /// </summary>
-    public class HttpSession {
+    public class HttpSession : IDisposable {
 
         // The current context. NB This changes with each request that is received.
         private HttpListenerContext _context;
@@ -316,6 +316,20 @@ namespace Babbacombe.Webserver {
         protected internal virtual void OnRespondException(HttpRespondException ex) {
             var errPage = new HttpErrorPage(this, ex.ToString());
             errPage.Send();
+        }
+
+        /// <summary>
+        /// The base HttpSession.Dispose does nothing.
+        /// </summary>
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing) {
+            // Dispose of any handlers that have had IDisposable added to them.
+            foreach (var h in _handlers.OfType<IDisposable>()) h.Dispose();
+            _handlers.Clear();
         }
     }
 

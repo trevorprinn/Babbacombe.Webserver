@@ -10,7 +10,7 @@ using System.Xml.Linq;
 using Babbacombe.Webserver;
 
 namespace Babbacombe.WebSampleApp.Exercise {
-    class HttpSession : Babbacombe.Webserver.HttpSession, IDisposable {
+    class HttpSession : Babbacombe.Webserver.HttpSession {
         private TimeSpan _expiryTime;
         private FormSession _form;
 
@@ -38,12 +38,13 @@ namespace Babbacombe.WebSampleApp.Exercise {
             set { _expiryTime = new TimeSpan(0, 0, value); }
         }
 
-        public void Dispose() {
+        protected override void Dispose(bool disposing) {
             if (_form != null) {
                 _form.Invoke(new Action(() => _form.Close()));
                 _form.Dispose();
                 _form = null;
             }
+            base.Dispose(disposing);
         }
 
         protected override FileRequestedEventArgs OnFileRequested(string filename) {

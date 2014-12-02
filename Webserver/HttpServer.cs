@@ -157,7 +157,7 @@ namespace Babbacombe.Webserver {
             Listener.Stop();
             if (clearSessions) {
                 lock (_cachedSessions) {
-                    foreach (var s in _cachedSessions.OfType<IDisposable>()) {
+                    foreach (var s in _cachedSessions) {
                         s.Dispose();
                     }
                     _cachedSessions = new List<HttpSession>();
@@ -222,10 +222,9 @@ namespace Babbacombe.Webserver {
                 // Reset the expiry timer again in case the response took a hideously long time.
                 session.LastAccessed = DateTime.UtcNow;
 
-                // If the session is not being saved, and it is of a type which has been made
-                // disposable, dispose of it.
-                if (session.SessionId == null && session is IDisposable) {
-                    ((IDisposable)session).Dispose();
+                // If the session is not being saved, dispose of it.
+                if (session.SessionId == null) {
+                    session.Dispose();
                 }
             } catch (Exception ex) {
                 OnException(ex);
@@ -241,9 +240,7 @@ namespace Babbacombe.Webserver {
                 var now = DateTime.UtcNow;
                 var expired = _cachedSessions.Where(s => s.ExpiresAt < now).ToList();
                 foreach (var s in expired) {
-                    // An implementation of HttpSession could have been made disposable
-                    var disp = s as IDisposable;
-                    if (disp != null) disp.Dispose();
+                    s.Dispose();
                     _cachedSessions.Remove(s);
                 }
             }
