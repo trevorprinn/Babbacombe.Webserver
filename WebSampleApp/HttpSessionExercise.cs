@@ -104,7 +104,12 @@ namespace Babbacombe.WebSampleApp.Exercise {
             var values = new string[] { vals["get1"], vals["get2"], vals["get3"] };
             Session.ShowClientValues(values);
             var url = Session.Context.Request.Url;
-            Session.Redirect(new UriBuilder(url.Scheme, url.Host, url.Port, url.AbsolutePath).Uri);
+            Session.Redirect(Session.TopUrl);
+        }
+
+        public void Close() {
+            Session.Close();
+            Session.Redirect(Session.TopUrl);
         }
     }
 }

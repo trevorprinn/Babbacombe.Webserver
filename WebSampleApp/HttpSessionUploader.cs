@@ -37,7 +37,7 @@ namespace Babbacombe.WebSampleApp.Uploader {
             
             // Redisplay the upload page again.
             var url = Session.Context.Request.Url;
-            Session.Redirect(new UriBuilder(url.Scheme, url.Host, url.Port, url.AbsolutePath).Uri);
+            Session.Redirect(Session.TopUrl);
         }
     }
 }

@@ -47,6 +47,11 @@ namespace Babbacombe.Webserver {
         internal DateTime LastAccessed { get; set; }
 
         /// <summary>
+        /// True if Close() has been called during this request.
+        /// </summary>
+        public bool Closing { get; private set; }
+
+        /// <summary>
         /// Gets the session id used to identify the client across calls. See CreateSessionId for more info.
         /// </summary>
         protected internal string SessionId {
@@ -300,6 +305,13 @@ namespace Babbacombe.Webserver {
             get { return LastAccessed.Add(ExpiryTime); }
         }
 
+        public Uri TopUrl {
+            get {
+                var u = Context.Request.Url;
+                return new UriBuilder(u.Scheme, u.Host, u.Port, Server is HttpAppServer ? u.Segments[1] : null).Uri;
+            }
+        }
+
         public void Redirect(string url) {
             Redirect(new Uri(url));
         }
@@ -330,6 +342,13 @@ namespace Babbacombe.Webserver {
             // Dispose of any handlers that have had IDisposable added to them.
             foreach (var h in _handlers.OfType<IDisposable>()) h.Dispose();
             _handlers.Clear();
+        }
+
+        /// <summary>
+        /// Closes the session at the end of processing the current request.
+        /// </summary>
+        public void Close() {
+            Closing = true;
         }
     }
 

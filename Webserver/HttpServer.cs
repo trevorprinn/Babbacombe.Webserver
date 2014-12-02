@@ -208,8 +208,10 @@ namespace Babbacombe.Webserver {
                 }
 
                 // If this session is to be saved, add it to the cache if it's not already there.
+                // Remove it from the cache if it is being closed.
                 lock (_cachedSessions) {
-                    if (session.SessionId != null && !_cachedSessions.Contains(session)) _cachedSessions.Add(session);
+                    if (session.SessionId != null && !session.Closing && !_cachedSessions.Contains(session)) _cachedSessions.Add(session);
+                    if (session.Closing && _cachedSessions.Contains(session)) _cachedSessions.Remove(session);
                 }
 
                 // If the session has put the text of a page into the Response property, send it.
@@ -223,7 +225,7 @@ namespace Babbacombe.Webserver {
                 session.LastAccessed = DateTime.UtcNow;
 
                 // If the session is not being saved, dispose of it.
-                if (session.SessionId == null) {
+                if (session.SessionId == null || session.Closing) {
                     session.Dispose();
                 }
             } catch (Exception ex) {
