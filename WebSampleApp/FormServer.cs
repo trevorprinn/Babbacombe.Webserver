@@ -27,7 +27,6 @@ namespace Babbacombe.WebSampleApp {
                 new HttpApplicationDef("uploader", typeof(Uploader.HttpSession), 80, "Uploader")
             };
             _server = new HttpAppServer(appDefs);
-            _server.TrackSessions = true;
             // Check for expiry every 10 secs, rather than 5 mins.
             _server.SessionsExpiryInterval = new TimeSpan(0, 0, 10);
             _server.Exception += _server_Exception;

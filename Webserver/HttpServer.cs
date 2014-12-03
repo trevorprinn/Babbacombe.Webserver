@@ -49,7 +49,7 @@ namespace Babbacombe.Webserver {
 
         /// <summary>
         /// Controls whether the same session object is used across requests from the same client.
-        /// Defaults to False. Can be overridden within a session.
+        /// Defaults to True. Can be overridden within a session.
         /// </summary>
         public bool TrackSessions { get; set; }
 
@@ -89,6 +89,8 @@ namespace Babbacombe.Webserver {
                 throw new HttpServerException("HttpListener is not supported");
             }
             _sessionType = typeof(HttpSession);
+
+            TrackSessions = true;
 
             var prefs = prefixes != null ? prefixes.ToList() : new List<string>();
             if (prefs.Count == 0) prefs.Add("http://+:80/");
