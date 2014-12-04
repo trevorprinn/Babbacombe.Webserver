@@ -5,18 +5,6 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Webserver", "Webserver\Webserver.csproj", "{0A977AD5-F78D-4DDF-8B31-3F0D5885488F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleWebserverTest", "SimpleWebserverTest\SimpleWebserverTest.csproj", "{0DB45955-E828-4D11-A196-FBBB47E21668}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SessionCookieTest", "SessionCookieTest\SessionCookieTest.csproj", "{B9C5A1C2-8ED0-47DC-B1D0-4E9CB04EB012}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleHandlerTest", "SimpleHandlerTest\SimpleHandlerTest.csproj", "{DE4E9994-5C84-4466-A00E-2812B9E61841}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimplePageTest", "SimplePageTest\SimplePageTest.csproj", "{4EE9AD3A-04DE-4BA1-A562-8F5445A513AC}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubmitPostTest", "SubmitPostTest\SubmitPostTest.csproj", "{CB037E0F-6E52-4B6C-9BF1-F1A8F5EC3A29}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppTest", "AppTest\AppTest.csproj", "{8C21622D-11B4-4C20-8D36-9941A63DEB07}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSampleApp", "WebSampleApp\WebSampleApp.csproj", "{39867376-6891-48DA-9218-35231B638C58}"
 EndProject
 Global
@@ -29,30 +17,6 @@ Global
 		{0A977AD5-F78D-4DDF-8B31-3F0D5885488F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A977AD5-F78D-4DDF-8B31-3F0D5885488F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A977AD5-F78D-4DDF-8B31-3F0D5885488F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0DB45955-E828-4D11-A196-FBBB47E21668}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0DB45955-E828-4D11-A196-FBBB47E21668}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0DB45955-E828-4D11-A196-FBBB47E21668}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0DB45955-E828-4D11-A196-FBBB47E21668}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B9C5A1C2-8ED0-47DC-B1D0-4E9CB04EB012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B9C5A1C2-8ED0-47DC-B1D0-4E9CB04EB012}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B9C5A1C2-8ED0-47DC-B1D0-4E9CB04EB012}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B9C5A1C2-8ED0-47DC-B1D0-4E9CB04EB012}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DE4E9994-5C84-4466-A00E-2812B9E61841}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DE4E9994-5C84-4466-A00E-2812B9E61841}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DE4E9994-5C84-4466-A00E-2812B9E61841}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DE4E9994-5C84-4466-A00E-2812B9E61841}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4EE9AD3A-04DE-4BA1-A562-8F5445A513AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4EE9AD3A-04DE-4BA1-A562-8F5445A513AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4EE9AD3A-04DE-4BA1-A562-8F5445A513AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4EE9AD3A-04DE-4BA1-A562-8F5445A513AC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CB037E0F-6E52-4B6C-9BF1-F1A8F5EC3A29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CB037E0F-6E52-4B6C-9BF1-F1A8F5EC3A29}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CB037E0F-6E52-4B6C-9BF1-F1A8F5EC3A29}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CB037E0F-6E52-4B6C-9BF1-F1A8F5EC3A29}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8C21622D-11B4-4C20-8D36-9941A63DEB07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8C21622D-11B4-4C20-8D36-9941A63DEB07}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8C21622D-11B4-4C20-8D36-9941A63DEB07}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8C21622D-11B4-4C20-8D36-9941A63DEB07}.Release|Any CPU.Build.0 = Release|Any CPU
 		{39867376-6891-48DA-9218-35231B638C58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{39867376-6891-48DA-9218-35231B638C58}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{39867376-6891-48DA-9218-35231B638C58}.Release|Any CPU.ActiveCfg = Release|Any CPU
