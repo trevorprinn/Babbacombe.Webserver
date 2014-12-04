@@ -187,11 +187,11 @@ namespace Babbacombe.Webserver {
                 return;
             }
 
-            if (filename == null || !File.Exists(filename)) {
+            if (details.Filename == null || !File.Exists(details.Filename)) {
                 new HttpErrorPage(this, 404, "File not found").Send();
                 return;
             }
-            using (var f = new FileStream(filename, FileMode.Open, FileAccess.Read)) {
+            using (var f = new FileStream(details.Filename, FileMode.Open, FileAccess.Read)) {
                 f.CopyTo(Context.Response.OutputStream);
             }
         }
