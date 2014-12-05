@@ -29,7 +29,7 @@ namespace Babbacombe.Webserver {
         protected override HttpSession CreateSession(Uri url) {
             var appDef = getAppDef(url);
             var session = (HttpSession)Activator.CreateInstance(appDef.SessionType);
-            session.BaseFolder = appDef.BaseFolder;
+            session.BaseFolder = appDef.BaseFolder ?? BaseFolder;
             return session;
         }
 
