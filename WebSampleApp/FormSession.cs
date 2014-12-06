@@ -10,21 +10,23 @@ using System.Windows.Forms;
 
 namespace Babbacombe.WebSampleApp.Exercise {
     partial class FormSession : Form {
-        private HttpSession _session;
+        private HttpSession.RequestData _reqData;
         private string _lastUrl;
         private string _lastMethod;
         private int _lastUrlCount;
 
-        public FormSession(HttpSession session) {
+        private HttpSession Session { get { return (HttpSession)_reqData.Session; } }
+
+        public FormSession(HttpSession.RequestData reqData) {
             InitializeComponent();
 
-            _session = session;
-            numExpiry.Value = _session.ExpireSecs;
-            labelHost.Text = _session.Context.Request.UserHostName;
+            _reqData = reqData;
+            numExpiry.Value = Session.ExpireSecs;
+            labelHost.Text = reqData.Context.Request.UserHostName;
         }
 
         private void numExpiry_ValueChanged(object sender, EventArgs e) {
-            _session.ExpireSecs = (int)numExpiry.Value;
+            Session.ExpireSecs = (int)numExpiry.Value;
         }
 
         public void AddUrl(Uri url, string method) {

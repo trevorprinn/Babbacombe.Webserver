@@ -27,6 +27,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using System.Xml.Linq;
@@ -40,9 +41,44 @@ namespace Babbacombe.Webserver {
     /// </summary>
     public class HttpSession : IDisposable {
 
-        // The current context. NB This changes with each request that is received.
-        private HttpListenerContext _context;
-        
+        /// <summary>
+        /// Contains data specific to one request/thread.
+        /// </summary>
+        public sealed class RequestData {
+            public HttpSession Session { get; private set; }
+            internal int ThreadId { get; private set; }
+            public HttpListenerContext Context { get; private set; }
+            public QueryItems QueryItems { get; private set; }
+            public string Response { get; set; }
+            public Uri TopUrl {
+                get {
+                    var u = Context.Request.Url;
+                    return new UriBuilder(u.Scheme, u.Host, u.Port, Session.Server is HttpAppServer ? u.Segments[1] : null).Uri;
+                }
+            }
+
+            internal RequestData(HttpSession session, HttpListenerContext context) {
+                ThreadId = Thread.CurrentThread.ManagedThreadId;
+                Session = session;
+                Context = context;
+                QueryItems = QueryItems.Get(Context.Request.Url);
+            }
+        }
+
+        // Data for each of the current requests.
+        private List<RequestData> _requestData = new List<RequestData>();
+
+        /// <summary>
+        /// Obtains the request specific data so that it can be used in a thread other
+        /// than the one the request is being processed on.
+        /// </summary>
+        /// <returns></returns>
+        public RequestData GetRequestData() {
+            var data = _requestData.SingleOrDefault(d => d.ThreadId == Thread.CurrentThread.ManagedThreadId);
+            if (data == null) throw new HttpSessionThreadException();
+            return data;
+        }
+
         /// <summary>
         /// Gets the server that has created this session.
         /// </summary>
@@ -58,9 +94,11 @@ namespace Babbacombe.Webserver {
         protected internal string BaseFolder { get; set; }
 
         /// <summary>
-        /// The items in the Query string in the request url.
+        /// The items in the Query string in the request url. This property is thread specific.
         /// </summary>
-        protected internal QueryItems QueryItems { get; private set; }
+        public QueryItems QueryItems {
+            get { return GetRequestData().QueryItems; }
+        }
 
         // A cache of the request handler objects created by this session.
         private List<HttpRequestHandler> _handlers = new List<HttpRequestHandler>();
@@ -69,7 +107,7 @@ namespace Babbacombe.Webserver {
         internal DateTime LastAccessed { get; set; }
 
         /// <summary>
-        /// True if Close() has been called during this request.
+        /// True if Close() has been called during this request (or any concurrent request).
         /// </summary>
         public bool Closing { get; private set; }
 
@@ -85,14 +123,20 @@ namespace Babbacombe.Webserver {
         }
 
         /// <summary>
-        /// Gets the context (the base Request and Response) currently being processed by the session.
+        /// Gets the context (the base Request and Response) currently being processed by the session. This
+        /// property is thread specific.
         /// </summary>
         public HttpListenerContext Context {
-            get { return _context; }
+            get { return GetRequestData().Context; }
             internal set {
-                _context = value;
-                QueryItems = QueryItems.Get(Context.Request.Url);
+                _requestData.Add(new RequestData(this, value));
             }
+        }
+
+        internal void RequestComplete() {
+            // Remove the request data for this thread.
+            var data = _requestData.SingleOrDefault(d => d.ThreadId == Thread.CurrentThread.ManagedThreadId);
+            if (data != null) _requestData.Remove(data);
         }
 
         /// <summary>
@@ -154,15 +198,16 @@ namespace Babbacombe.Webserver {
 
         /// <summary>
         /// The response to send back to the client after the Repond method has run. If this is left null, the server will assume that
-        /// the session has handled the response in some other way.
+        /// the session has handled the response in some other way. This property is thread specific.
         /// </summary>
-        /// <remarks>
-        /// The server always sets this to null before calling the Respond method.
-        /// </remarks>
-        public string Response { get; set; }
+        public string Response {
+            get { return GetRequestData().Response; }
+            set { GetRequestData().Response = value; }
+        }
 
         /// <summary>
-        /// A convenient way to send an XML document as the response.
+        /// A convenient way to send an XML document as the response. Can be called only on the request's
+        /// original thread.
         /// </summary>
         /// <param name="doc"></param>
         public void SetXmlResponse(XDocument doc) {
@@ -170,7 +215,8 @@ namespace Babbacombe.Webserver {
         }
 
         /// <summary>
-        /// A convenient way to send part of an XML document as the response.
+        /// A convenient way to send part of an XML document as the response. Can be called only on the request's
+        /// original thread.
         /// </summary>
         /// <param name="data"></param>
         public void SetXmlResponse(XElement data) {
@@ -179,7 +225,7 @@ namespace Babbacombe.Webserver {
 
         /// <summary>
         /// Given a body element, wraps it in a completely basic header, to
-        /// send as the response.
+        /// send as the response. Can be called only on the request's original thread.
         /// </summary>
         /// <param name="body"></param>
         public void SetXmlBody(XElement body) {
@@ -191,20 +237,23 @@ namespace Babbacombe.Webserver {
         /// Sends a file as the response.
         /// </summary>
         /// <param name="filename">A full filename.</param>
+        /// <param name="requestData">Should be set if not running on the request's original thread.</param>
         /// <remarks>
         /// Sends the file directly to the output stream (doesn't use the Response property, which
         /// should be left null).
         /// </remarks>
-        public void SendFile(string filename) {
+        public void SendFile(string filename, RequestData requestData = null) {
+            if (requestData == null) requestData = GetRequestData();
+
             var details = OnFileRequested(filename);
 
             if (details.Contents != null || details.Document != null) {
-                Response = details.Contents != null ? details.Contents : details.Document.ToString();
+                requestData.Response = details.Contents != null ? details.Contents : details.Document.ToString();
                 return;
             }
             
             if (details.Stream != null) {
-                details.Stream.CopyTo(Context.Response.OutputStream);
+                details.Stream.CopyTo(requestData.Context.Response.OutputStream);
                 if (!details.LeaveStream) details.Stream.Dispose();
                 return;
             }
@@ -214,7 +263,7 @@ namespace Babbacombe.Webserver {
                 return;
             }
             using (var f = new FileStream(details.Filename, FileMode.Open, FileAccess.Read)) {
-                f.CopyTo(Context.Response.OutputStream);
+                f.CopyTo(requestData.Context.Response.OutputStream);
             }
         }
 
@@ -249,7 +298,7 @@ namespace Babbacombe.Webserver {
 
         /// <summary>
         /// True if the query items in the request url include items defining a request handler class and method
-        /// to be called.
+        /// to be called. Should be called only on the request's original thread.
         /// </summary>
         /// <returns></returns>
         protected bool RequestHasMethod() {
@@ -327,6 +376,13 @@ namespace Babbacombe.Webserver {
             get { return LastAccessed.Add(ExpiryTime); }
         }
 
+        internal bool InUse {
+            get { return _requestData.Any(); }
+        }
+
+        /// <summary>
+        /// Returns the top url of the web app. This property is thread specific.
+        /// </summary>
         public Uri TopUrl {
             get {
                 var u = Context.Request.Url;
@@ -334,17 +390,29 @@ namespace Babbacombe.Webserver {
             }
         }
 
-        public void Redirect(string url) {
+        /// <summary>
+        /// Redirects the client to the given url.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="requestData">Should be set if not running on the request's original thread.</param>
+        public void Redirect(string url, RequestData requestData = null) {
             Redirect(new Uri(url));
         }
 
-        public void Redirect(Uri url) {
-            Context.Response.Headers.Set("Location", url.ToString());
-            Context.Response.StatusCode = 303;
+        /// <summary>
+        /// Redirects the client to the given url.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="requestData">Should be set if not running on the request's original thread.</param>
+        public void Redirect(Uri url, RequestData requestData = null) {
+            if (requestData == null) requestData = GetRequestData();
+            requestData.Context.Response.Headers.Set("Location", url.ToString());
+            requestData.Context.Response.StatusCode = 303;
         }
 
         /// <summary>
-        /// Called if an untrapped exception occurs within a Respond method.
+        /// Called if an untrapped exception occurs within a Respond method. Can only be called on the
+        /// request's original thread.
         /// </summary>
         /// <param name="ex"></param>
         protected internal virtual void OnRespondException(HttpRespondException ex) {
@@ -396,6 +464,14 @@ namespace Babbacombe.Webserver {
     public class HttpHandlerMethodException : HttpRespondException {
         public HttpHandlerMethodException(string handler, string method, Exception ex)
             : base(string.Format("Exception within the requested method '{0}.{1}'", handler, method), ex) { }
+    }
+
+    [Serializable]
+    public class HttpSessionThreadException : ApplicationException {
+        public HttpSessionThreadException() { }
+        public override string Message {
+            get { return "Attempted to access Request specific data on an unknown thread"; }
+        }
     }
 
     public class QueryItems : IEnumerable<QueryItem> {

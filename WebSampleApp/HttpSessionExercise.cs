@@ -17,8 +17,12 @@ namespace Babbacombe.WebSampleApp.Exercise {
         protected override void OnCreated() {
             base.OnCreated();
             _expiryTime = base.ExpiryTime;
+            /* Get the data about this specific thread, so that it can be passed
+             * to the form. Try to retrieve it in the form code will fail because
+             * it will be running on a different thread. */
+            var reqData = GetRequestData();
             FormServer.Instance.Invoke(new Action(() => {
-                _form = new FormSession(this);
+                _form = new FormSession(reqData);
                 _form.Text = "Session: " + SessionId;
                 _form.Show();
             }));

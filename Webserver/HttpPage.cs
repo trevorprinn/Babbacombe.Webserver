@@ -82,9 +82,10 @@ namespace Babbacombe.Webserver {
         /// <summary>
         /// Sets the response's content type to xhtml and sets up the page to be the response.
         /// </summary>
-        public void Send() {
-            Session.Context.Response.ContentType = "application/xhtml+xml";
-            Session.SetXmlResponse(this);
+        public void Send(HttpSession.RequestData requestData = null) {
+            if (requestData == null) requestData = Session.GetRequestData();
+            requestData.Context.Response.ContentType = "application/xhtml+xml";
+            requestData.Response = ToString();
         }
 
         /// <summary>

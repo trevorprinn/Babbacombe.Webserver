@@ -215,8 +215,9 @@ namespace Babbacombe.Webserver {
         }
 
         private void handleRequest(HttpListenerContext context) {
+            HttpSession session = null;
             try {
-                var session = getSession(context);
+                session = getSession(context);
                 // Reset the time used to calculate expiry.
                 session.LastAccessed = DateTime.UtcNow;
                 // Clear out any output from previous requests.
@@ -247,16 +248,18 @@ namespace Babbacombe.Webserver {
                 }
                 // Reset the expiry timer again in case the response took a hideously long time.
                 session.LastAccessed = DateTime.UtcNow;
-
-                // If the session is not being saved, dispose of it.
-                if (session.SessionId == null || session.Closing) {
-                    session.Dispose();
-                }
             } catch (Exception ex) {
                 OnException(ex);
             } finally {
                 context.Response.OutputStream.Close();
                 context.Response.Close();
+                if (session != null) session.RequestComplete();
+
+                // If the session is not being saved, dispose of it.
+                if ((session.SessionId == null || session.Closing) && !session.InUse) {
+                    session.Dispose();
+                    session = null;
+                }
             }
         }
 
@@ -264,7 +267,7 @@ namespace Babbacombe.Webserver {
         void expiryTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
             lock (_cachedSessions) {
                 var now = DateTime.UtcNow;
-                var expired = _cachedSessions.Where(s => s.ExpiresAt < now).ToList();
+                var expired = _cachedSessions.Where(s => !s.InUse && s.ExpiresAt < now).ToList();
                 foreach (var s in expired) {
                     s.Dispose();
                     _cachedSessions.Remove(s);
