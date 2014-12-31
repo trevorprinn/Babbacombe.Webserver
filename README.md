@@ -1,7 +1,7 @@
 Babbacombe.Webserver
 ====================
 
-A simple, lean, extendable Webserver in a dll for incorporation into .net/mono/xamarin projects.
+A simple, lean, extendable Webserver in a dll for incorporation into .net/mono projects.
 
 This basic implementation is intended for use only on intranets (or over a VPN) and contains no security whatsoever. **DO NOT** connect an app using it directly to the internet.  
 
