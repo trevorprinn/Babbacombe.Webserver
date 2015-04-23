@@ -110,7 +110,11 @@ namespace Babbacombe.Webserver {
                     }
                 }
                 if (!_pushBackBuffer.Any() && (ch == '\n' || ch == '\r')) {
-                    if (delimCount == 0) {
+                    if (delimiterBuffer.Contains('\n')) {
+                        // Found 2 new lines in a row
+                        pushback(delimiterBuffer, ch);
+                        delimCount = 0;
+                    } else if (delimCount == 0) {
                         // Possibly at or near start of delimiter
                         delimiterBuffer.Add(ch);
                     } else {
