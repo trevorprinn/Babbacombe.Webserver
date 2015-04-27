@@ -12,3 +12,6 @@ netsh http add urlacl url=http://+:80/ user=DOMAIN\User listen=yes
 at an Administrator command prompt.
 
 See [the project's wiki](https://github.com/trevorprinn/Babbacombe.Webserver/wiki) for more information.
+
+The library is available from the Babbacombe myget (nuget) feed
+https://www.myget.org/F/babbacom-feed/api/v2

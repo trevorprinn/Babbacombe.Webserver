@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>Babbacombe.Webserver</id>
+        <version>1.0.0</version>
+        <title>Babbacombe Webserver</title>
+        <authors>Trevor Prinn</authors>
+        <licenseUrl>https://github.com/trevorprinn/Babbacombe.Webserver/blob/master/LICENCE</licenseUrl>
+        <projectUrl>https://github.com/trevorprinn/Babbacombe.Webserver</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>A simple, lean, extendable Webserver in a dll for incorporation into .net/mono projects</description>
+        <summary />
+        <copyright>Copyright © Babbacombe Computers Ltd 2015</copyright>
+        <tags>webserver</tags>
+        <dependencies>
+            <dependency id="Babbacombe.Logger" version="1.0.0" />
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="bin\Release\Babbacombe.Webserver.XML" target="lib\Babbacombe.Webserver.XML" />
+        <file src="bin\Release\Babbacombe.Webserver.dll" target="lib\Babbacombe.Webserver.dll" />
+    </files>
+</package>

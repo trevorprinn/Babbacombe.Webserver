@@ -2,3 +2,4 @@ bin
 obj
 *.suo
 /packages
+/Webserver/Babbacombe.Webserver.nupkg
