@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Http;
 
+using Babbacombe.Logger;
 using Babbacombe.Webserver;
 
 namespace Babbacombe.WebSampleApp.Uploader {

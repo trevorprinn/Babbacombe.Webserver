@@ -1,4 +1,6 @@
-﻿namespace Babbacombe.WebSampleApp {
+﻿using Babbacombe.Logger;
+
+namespace Babbacombe.WebSampleApp {
     partial class FormServer {
         /// <summary>
         /// Required designer variable.
@@ -28,25 +30,26 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
-            this.listMessages = new Babbacombe.WebSampleApp.ListenerListBox();
+            this.listenerListBox1 = new Babbacombe.Logger.ListenerListBox();
             this.SuspendLayout();
             // 
-            // listMessages
+            // listenerListBox1
             // 
-            this.listMessages.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.listMessages.FormattingEnabled = true;
-            this.listMessages.IntegralHeight = false;
-            this.listMessages.Location = new System.Drawing.Point(0, 0);
-            this.listMessages.Name = "listMessages";
-            this.listMessages.Size = new System.Drawing.Size(284, 262);
-            this.listMessages.TabIndex = 0;
+            this.listenerListBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.listenerListBox1.FormattingEnabled = true;
+            this.listenerListBox1.IntegralHeight = false;
+            this.listenerListBox1.Location = new System.Drawing.Point(0, 0);
+            this.listenerListBox1.Name = "listenerListBox1";
+            this.listenerListBox1.SelectedItem = null;
+            this.listenerListBox1.Size = new System.Drawing.Size(284, 262);
+            this.listenerListBox1.TabIndex = 0;
             // 
             // FormServer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 262);
-            this.Controls.Add(this.listMessages);
+            this.Controls.Add(this.listenerListBox1);
             this.Name = "FormServer";
             this.Text = "Web Server";
             this.ResumeLayout(false);
@@ -55,7 +58,9 @@
 
         #endregion
 
-        private ListenerListBox listMessages;
+        private Logger.ListenerListBox listenerListBox1;
+
+
 
     }
 }
