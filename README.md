@@ -13,5 +13,5 @@ at an Administrator command prompt.
 
 See [the project's wiki](https://github.com/trevorprinn/Babbacombe.Webserver/wiki) for more information.
 
-The library is available from the Babbacombe myget (nuget) feed
+The library is available from the [Babbacombe myget (nuget) feed](https://www.myget.org/gallery/babbacom-feed)    
 https://www.myget.org/F/babbacom-feed/api/v2
