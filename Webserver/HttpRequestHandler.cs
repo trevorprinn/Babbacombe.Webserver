@@ -83,27 +83,28 @@ namespace Babbacombe.Webserver {
         /// <param name="enc">If null, defaults to UTF8.</param>
         /// <returns></returns>
         protected string ReadPostStream(Encoding enc = null) {
-            if (enc == null) enc = Encoding.UTF8;
-            using (var s = GetPostStream()) {
-                StringBuilder data = new StringBuilder();
-                var buf = new byte[10240];
-                int count;
-                do {
-                    count = s.Read(buf, 0, buf.Length);
-                    data.Append(enc.GetString(buf, 0, count));
-                } while (count > 0);
-                return data.ToString();
-            }
+            return Session.ReadPostStream(enc);
         }
 
         /// <summary>
         /// Gets the posted submit data as a set of QueryItems.
         /// </summary>
         /// <returns></returns>
+        [Obsolete("Use PostedItems property")]
         protected QueryItems GetPostedItems() {
-            return QueryItems.Get(ReadPostStream());
+            return Session.PostedItems;
         }
 
+        /// <summary>
+        /// The items posted from a form. Null if the content type is not "application/x-www-form-urlencoded".
+        /// </summary>
+        protected QueryItems PostedItems {
+            get { return Session.PostedItems; }
+        }
+
+        /// <summary>
+        /// The items sent in the request url.
+        /// </summary>
         protected QueryItems QueryItems {
             get { return Session.QueryItems; }
         }

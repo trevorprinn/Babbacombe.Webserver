@@ -69,9 +69,9 @@ namespace Babbacombe.WebSampleApp.Exercise {
                 ReplaceValue("item2", vals[1]);
                 ReplaceValue("item3", vals[2]);
                 vals = session.GetClientValues().ToArray();
-                ReplaceValue("get1", vals[0]);
-                ReplaceValue("get2", vals[1]);
-                ReplaceValue("get3", vals[2]);
+                ReplaceValue("Get1", vals[0]);
+                ReplaceValue("Get2", vals[1]);
+                ReplaceValue("Get3", vals[2]);
             }
         }
 
@@ -103,10 +103,16 @@ namespace Babbacombe.WebSampleApp.Exercise {
             Session.SetXmlResponse(response);
         }
 
-        public void Posted() {
-            var vals = GetPostedItems();
-            var values = new string[] { vals["get1"], vals["get2"], vals["get3"] };
-            Session.ShowClientValues(values);
+        public class PostedViewModel {
+            public string Get1 { get; set; }
+            public string Get2 { get; set; }
+            public string Get3 { get; set; }
+            public string[] Values { get { return new string[] { Get1, Get2, Get3 }; } }
+        }
+
+        public void Posted(PostedViewModel vm, int Get1) {
+            System.Diagnostics.Trace.WriteLine("Get1 = " + Get1.ToString());
+            Session.ShowClientValues(vm.Values);
             var url = Session.Context.Request.Url;
             Session.Redirect(Session.TopUrl);
         }

@@ -49,6 +49,7 @@ namespace Babbacombe.Webserver {
             internal int ThreadId { get; private set; }
             public HttpListenerContext Context { get; private set; }
             public QueryItems QueryItems { get; private set; }
+            public QueryItems PostedItems { get; private set; }
             public string Response { get; set; }
             public Uri TopUrl {
                 get {
@@ -62,6 +63,8 @@ namespace Babbacombe.Webserver {
                 Session = session;
                 Context = context;
                 QueryItems = QueryItems.Get(Context.Request.Url);
+                PostedItems = Context.Request.ContentType == "application/x-www-form-urlencoded"
+                    ? QueryItems.Get(readPostStream(Context)) : null;
             }
         }
 
@@ -98,6 +101,38 @@ namespace Babbacombe.Webserver {
         /// </summary>
         public QueryItems QueryItems {
             get { return GetRequestData().QueryItems; }
+        }
+
+        /// <summary>
+        /// If the posted data is form urlencoded items posted.
+        /// Null if the content type is not "application/x-www-form-urlencoded"
+        /// This property is thread specific.
+        /// </summary>
+        public QueryItems PostedItems {
+            get { return GetRequestData().PostedItems; }
+        }
+
+        /// <summary>
+        /// A convenient way of reading the request's input stream into a string.
+        /// </summary>
+        /// <param name="enc">If null, defaults to UTF8.</param>
+        /// <returns></returns>
+        internal protected string ReadPostStream(Encoding enc = null) {
+            return readPostStream(Context, enc);
+        }
+
+        internal static string readPostStream(HttpListenerContext context, Encoding enc = null) {
+            if (enc == null) enc = Encoding.UTF8;
+            using (var s = context.Request.InputStream) {
+                StringBuilder data = new StringBuilder();
+                var buf = new byte[10240];
+                int count;
+                do {
+                    count = s.Read(buf, 0, buf.Length);
+                    data.Append(enc.GetString(buf, 0, count));
+                } while (count > 0);
+                return data.ToString();
+            }
         }
 
         // A cache of the request handler objects created by this session.
@@ -326,8 +361,12 @@ namespace Babbacombe.Webserver {
             methodName = QueryItems[MethodParameter];
             var method = handler.GetType().GetMethod(methodName);
             if (method == null) throw new HttpUnknownMethodException(className, methodName);
+
+            var bindingItems = Context.Request.HttpMethod == "POST" ? PostedItems : QueryItems;
+            var parameters = new ObjectBinder().Bind(bindingItems, method);
+
             try {
-                method.Invoke(handler, null);
+                method.Invoke(handler, parameters);
             } catch (Exception ex) {
                 throw new HttpHandlerMethodException(className, methodName, ex);
             }

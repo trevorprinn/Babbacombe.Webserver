@@ -51,6 +51,7 @@
     <Compile Include="HttpServer.cs" />
     <Compile Include="HttpSession.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ObjectBinder.cs" />
     <Compile Include="TextBinaryReader.cs" />
     <Compile Include="UploadStream.cs" />
   </ItemGroup>
