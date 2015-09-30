@@ -42,21 +42,51 @@ namespace Babbacombe.Webserver {
     public class HttpSession : IDisposable {
 
         /// <summary>
-        /// Contains data specific to one request/thread.
+        /// Contains data specific to one request/thread. This can be accessed using the
+        /// GetRequestData() method if it is necessary to use the Session or Request Handler
+        /// in a thread other than the one the request is initiated on. Otherwise the properties
+        /// of this object would normally be obtained directly from the properties of the Session object.
         /// </summary>
         public sealed class RequestData {
+            /// <summary>
+            /// The Session running the request.
+            /// </summary>
             public HttpSession Session { get; private set; }
+            
             internal int ThreadId { get; private set; }
+
+            /// <summary>
+            /// The Context of the request.
+            /// </summary>
             public HttpListenerContext Context { get; private set; }
+
+            /// <summary>
+            /// The items in the query url.
+            /// </summary>
             public QueryItems QueryItems { get; private set; }
+
+            /// <summary>
+            /// The items posted in the request if the Content Type is "application/x-www-form-urlencoded".
+            /// </summary>
             public QueryItems PostedItems { get; private set; }
+
+            /// <summary>
+            /// The response string to be sent.
+            /// </summary>
             public string Response { get; set; }
+
+            /// <summary>
+            /// The base url of the application.
+            /// </summary>
             public Uri TopUrl {
                 get {
                     var u = Context.Request.Url;
                     return new UriBuilder(u.Scheme, u.Host, u.Port, Session.Server is HttpAppServer ? u.Segments[1] : null).Uri;
                 }
             }
+
+            // Prevent objects being created externally
+            private RequestData() { }
 
             internal RequestData(HttpSession session, HttpListenerContext context) {
                 ThreadId = Thread.CurrentThread.ManagedThreadId;
@@ -269,9 +299,10 @@ namespace Babbacombe.Webserver {
         }
 
         /// <summary>
-        /// Sends a file as the response.
+        /// Sends a file as the response. OnFileRequested is called before sending the file to allow
+        /// a session class to override the default handling.
         /// </summary>
-        /// <param name="filename">A full filename.</param>
+        /// <param name="filename">A full filename. The file may or may not exist</param>
         /// <param name="requestData">Should be set if not running on the request's original thread.</param>
         /// <remarks>
         /// Sends the file directly to the output stream (doesn't use the Response property, which
@@ -302,16 +333,53 @@ namespace Babbacombe.Webserver {
             }
         }
 
+        /// <summary>
+        /// The arguments to the FileRequested event, which can be used to modify what is sent as
+        /// the file. Only one of Contents, Stream or Document should be set, and if any of them is
+        /// that data is sent instead of the contents of the file.
+        /// </summary>
         public class FileRequestedEventArgs : EventArgs {
+            /// <summary>
+            /// The full path of the file to be sent. This can be changed by the event handler.
+            /// </summary>
             public string Filename { get; set; }
+
+            /// <summary>
+            /// Instead of sending a file, setting this sends the contents of the string as the file.
+            /// </summary>
             public string Contents { get; set; }
+
+            /// <summary>
+            /// Instead of sending a file, setting this sends the contents of the stream as the file.
+            /// </summary>
             public Stream Stream { get; set; }
+
+            /// <summary>
+            /// If stream is set, setting this to True will not Dispose of the stream once it has been read.
+            /// By default, the stream will be Disposed of.
+            /// </summary>
             public bool LeaveStream { get; set; }
+
+            /// <summary>
+            /// Instead of sending a file, setting this sends the document as the file.
+            /// </summary>
             public XDocument Document { get; set; }
+
+            /// <summary>
+            /// True if any of Contents, Stream or Document is set.
+            /// </summary>
             public bool Handled { get { return Contents != null || Stream != null || Document != null; } }
         }
+        /// <summary>
+        /// Raised when a file is requested.
+        /// </summary>
         public event EventHandler<FileRequestedEventArgs> FileRequested;
 
+        /// <summary>
+        /// Raises the FileRequested event.
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <returns>The event args, which may modify the behaviour of SendFile.</returns>
         protected virtual FileRequestedEventArgs OnFileRequested(string filename) {
             var ea = new FileRequestedEventArgs { Filename = filename };
             if (FileRequested != null) FileRequested(this, ea);
@@ -346,8 +414,10 @@ namespace Babbacombe.Webserver {
         /// </summary>
         protected void RunMethod() {
             string className = string.Format("{0}.{1}", HandlerNamespace, QueryItems[ClassParameter]);
+            // Find an existing handler object, if there is one.
             var handler = _handlers.SingleOrDefault(h => h.GetType().FullName == className);
             if (handler == null) {
+                // Create a new handler object and cache it.
                 try {
                     var type = HandlerAssembly.GetType(className);
                     handler = (HttpRequestHandler)Activator.CreateInstance(type);
@@ -357,15 +427,20 @@ namespace Babbacombe.Webserver {
                 _handlers.Add(handler);
             }
             handler.Session = this;
+
             string methodName = null;
             methodName = QueryItems[MethodParameter];
+            // Find the requested method in the handler class.
             var method = handler.GetType().GetMethod(methodName);
             if (method == null) throw new HttpUnknownMethodException(className, methodName);
 
+            // Choose which set of items (from the url or posted data) to send to the request handler automatically.
             var bindingItems = Context.Request.HttpMethod == "POST" ? PostedItems : QueryItems;
+            // Create any objects for the parameters of the method and copy item data into them.
             var parameters = new ObjectBinder().Bind(bindingItems, method);
 
             try {
+                // Call the request handler method.
                 method.Invoke(handler, parameters);
             } catch (Exception ex) {
                 throw new HttpHandlerMethodException(className, methodName, ex);
@@ -513,6 +588,12 @@ namespace Babbacombe.Webserver {
         }
     }
 
+    /// <summary>
+    /// A list of the items received in the request. There are 2 possible sets of items, the
+    /// Query items, which are the parameters in the url, and the Posted items, which are the items
+    /// posted from a form. They can be obtained from the QueryItems and PostedItems properties of the
+    /// Session or the Request Handler.
+    /// </summary>
     public class QueryItems : IEnumerable<QueryItem> {
         private QueryItem[] _items;
 
@@ -522,19 +603,35 @@ namespace Babbacombe.Webserver {
             return Get(url.Query);
         }
 
+        /// <summary>
+        /// The effective constructor for the QueryItems class. Reads and parses
+        /// a query string.
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
         internal static QueryItems Get(string query) {
             List<QueryItem> items = new List<QueryItem>();
             var qs = HttpUtility.ParseQueryString(query);
             for (int i = 0; i < qs.Count; i++) {
                 var n = qs.AllKeys[i];
                 var v = qs.GetValues(i).FirstOrDefault();
-                if (n == null) n = v;
+                // If the item doesn't have a name, use the value as the name instead, and set the value to null.
+                // This seems more useful than an empty name, which is what the parser returns.
+                if (n == null) {
+                    n = v;
+                    v = null;
+                }
                 if (n == null) continue;
                 items.Add(new QueryItem { Name = n, Value = v });
             }
             return new QueryItems { _items = items.ToArray() };
         }
 
+        /// <summary>
+        /// Gets the value of the requested item, or null if there is no such item.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public string this[string name] {
             get {
                 var item = _items.FirstOrDefault(i => i.Name == name);
@@ -555,11 +652,12 @@ namespace Babbacombe.Webserver {
 
     /// <summary>
     /// A name and value passed either in the request url (see HttpSession.QueryItems
-    /// or HttpRequestHandler.GetArg) or in posted submit data
-    /// (see HttpRequestHandler.GetPostedItems).
+    /// or HttpRequestHandler.QueryItems) or in posted submit data
+    /// (see HttpSession.PostedItems or HttpRequestHandler.PostedItems).
     /// </summary>
     public class QueryItem {
         public string Name { get; internal set; }
         public string Value { get; internal set; }
+        internal QueryItem() { }
     }
 }

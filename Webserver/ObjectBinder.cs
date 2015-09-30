@@ -9,7 +9,8 @@ using System.Threading.Tasks;
 namespace Babbacombe.Webserver {
 
     /// <summary>
-    /// Copies Query Items received from the client into object properties
+    /// Copies Query Items received from the client into method parameters and properties of
+    /// objects in the method parameters.
     /// </summary>
     internal class ObjectBinder {
 
