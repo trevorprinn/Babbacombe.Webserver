@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -159,6 +160,45 @@ namespace Babbacombe.Webserver {
                 head.SetElementValue(ns + "title", value);
             }
         }
+
+        /// <summary>
+        /// Replaces items in the page with the values of properties in the model.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <param name="tagname"></param>
+        public void ApplyModel(object model, string tagname = null) {
+            if (tagname == null) tagname = DefaultTagName;
+            // Loop through the non-array properties that have a Get.
+            foreach (var prop in model.GetType().GetProperties().Where(p => p.CanRead && !p.PropertyType.IsArray)) {
+                // Default the item type to Value unless the property returns an XElement type.
+                var itemType = typeof(XElement).IsAssignableFrom(prop.PropertyType)
+                    ? PageModelItemTypes.Element : PageModelItemTypes.Value;
+
+                // Check the property to see if the item type has been overridden by a PageModelItemType attribute.
+                var typeAttr = prop.GetCustomAttribute<PageModelItemTypeAttribute>();
+                string tag = prop.Name;
+                string attribute = prop.Name;
+                if (typeAttr != null) {
+                    itemType = typeAttr.ItemType;
+                    tag = typeAttr.Tag ?? tag;
+                    attribute = typeAttr.Attribute ?? attribute;
+                }
+
+                switch (itemType) {
+                    case PageModelItemTypes.Value:
+                        ReplaceValue(tag, prop.GetValue(model).ToString(), tagname);
+                        break;
+                    case PageModelItemTypes.Attribute:
+                        ReplaceAttribute(tag, attribute, prop.GetValue(model).ToString(), tagname);
+                        break;
+                    case PageModelItemTypes.Element:
+                        ReplaceElement(tag, (XElement)prop.GetValue(model), tagname);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
     }
 
     public class HttpErrorPage : HttpPage {
@@ -179,6 +219,35 @@ namespace Babbacombe.Webserver {
             using (var s = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("Babbacombe.Webserver.DefaultErrorPage.html"))) {
                 return XDocument.Parse(s.ReadToEnd());
             }
+        }
+    }
+
+    /// <summary>
+    /// Defines how a model property value is used in HttpPage.ApplyModel
+    /// </summary>
+    public enum PageModelItemTypes {
+        Value, Attribute, Element, None
+    }
+
+    /// <summary>
+    /// Defines how a property value is used in HttpPage.ApplyModel.
+    /// The ItemType default is Value except for XElement types, where it is Element.
+    /// None causes the property to be ignored when applying the model.
+    /// The tag name (normally the property name) can be overridden. The attribute name
+    /// (by default also the property name) should be overridden if the type is Attribute.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property)]
+    public class PageModelItemTypeAttribute : Attribute {
+        public PageModelItemTypes ItemType { get; private set; }
+        public string Tag { get; private set; }
+        public string Attribute { get; private set; }
+
+        private PageModelItemTypeAttribute() { }
+
+        public PageModelItemTypeAttribute(PageModelItemTypes itemType, string tag = null, string attribute = null) {
+            ItemType = itemType;
+            Tag = tag;
+            Attribute = attribute;
         }
     }
 }

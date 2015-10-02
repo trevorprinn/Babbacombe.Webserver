@@ -73,20 +73,33 @@ namespace Babbacombe.WebSampleApp.Exercise {
             return ea;
         }
 
+        /// <summary>
+        /// Used to demonstrate how properties in a view model can be copied into a page,
+        /// in this case "index.html" using HttpPage.ApplyModel.
+        /// </summary>
+        private class IndexPageViewModel {
+            private string[] _serverValues;
+            private string[] _clientValues;
+            public string Item1 { get { return _serverValues[0]; } }
+            public string Item2 { get { return _serverValues[1]; } }
+            public string Item3 { get { return _serverValues[2]; } }
+            public string Get1 { get { return _clientValues[0]; } }
+            public string Get2 { get { return _clientValues[1]; } }
+            public string Get3 { get { return _clientValues[2]; } }
+            public string Session { get; private set; }
+
+            public IndexPageViewModel(HttpSession session) {
+                Session = session.SessionId;
+                // Put the values entered into the session form into the model to be copied into the page.
+                _serverValues = session.GetServerValues().ToArray();
+                // Put the values sent from the client into the model.
+                _clientValues = session.GetClientValues().ToArray();
+            }
+        }
+
         private class IndexPage : HttpPage {
             public IndexPage(XDocument data, HttpSession session) : base(data, session) {
-                DefaultTagName = "name";
-                ReplaceValue("session", session.SessionId);
-                // Put the values entered into the session form into the page.
-                var vals = session.GetServerValues().ToArray();
-                ReplaceValue("item1", vals[0]);
-                ReplaceValue("item2", vals[1]);
-                ReplaceValue("item3", vals[2]);
-                // Put the values sent from the client into the page.
-                vals = session.GetClientValues().ToArray();
-                ReplaceValue("Get1", vals[0]);
-                ReplaceValue("Get2", vals[1]);
-                ReplaceValue("Get3", vals[2]);
+                ApplyModel(new IndexPageViewModel(session), "name");
             }
         }
 
@@ -123,7 +136,7 @@ namespace Babbacombe.WebSampleApp.Exercise {
             var i = 1;
             foreach (var item in Session.GetServerValues()) {
                 response.Add(new XElement("update",
-                    new XAttribute("name", "item" + (i++).ToString()), new XAttribute("value", item)));
+                    new XAttribute("name", "Item" + (i++).ToString()), new XAttribute("value", item)));
             }
             Session.SetXmlResponse(response);
         }
