@@ -77,8 +77,27 @@ namespace Babbacombe.Webserver {
         public static HttpPage Create(string templateFile, HttpSession session, Type pageType = null) {
             if (pageType == null) pageType = typeof(HttpPage);
             var doc = XDocument.Load(templateFile);
-            return (HttpPage)Activator.CreateInstance(pageType, new object[] { doc, session });
+            return Create(doc, session, pageType, null);
         }
+
+        /// <summary>
+        /// Used when creating a page to be sent directly and set up using OnPreparePage
+        /// </summary>
+        /// <param name="doc"></param>
+        /// <param name="session"></param>
+        /// <param name="pageType"></param>
+        /// <returns></returns>
+        internal static HttpPage Create(XDocument doc, HttpSession session, Type pageType, string defaultTagName) {
+            var page = (HttpPage)Activator.CreateInstance(pageType, new object[] { doc, session });
+            if (defaultTagName != null) page.DefaultTagName = defaultTagName;
+            return page;
+        }
+
+        /// <summary>
+        /// Called automatically when an HttpPage derivative is detected and created by the Webserver. This should
+        /// be overridden to set up the page's contents.
+        /// </summary>
+        internal protected virtual void OnPreparePage() { }
 
         /// <summary>
         /// Sets the response's content type to xhtml and sets up the page to be the response.
@@ -142,6 +161,9 @@ namespace Babbacombe.Webserver {
             }
         }
 
+        /// <summary>
+        /// Gets or sets the Page title.
+        /// </summary>
         public string Title {
             get {
                 var ns = Root.GetDefaultNamespace();

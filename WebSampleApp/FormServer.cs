@@ -35,17 +35,18 @@ namespace Babbacombe.WebSampleApp {
             _server = new HttpAppServer(appDefs);
             // Check for expiry every 10 secs, rather than 5 mins.
             _server.SessionsExpiryInterval = new TimeSpan(0, 0, 10);
-            // Log any exceptions
-            _server.Exception += _server_Exception;
+            // Log any exceptions. This will write them both to the log file and the list box on this form.
+            _server.Exception += (s, e) => {
+                LogFile.Log(e.Ex.ToString());
+            };
+
+            // Send any exception details to the browser
+            _server.RespondWithExceptionDetails = true;
 
             LogFile.Log("Server started");
             _server.Start();
 
             // NB The web server is stopped and disposed of in FormServer.Dispose (in FormServer.Designer.cs).
-        }
-
-        void _server_Exception(object sender, HttpServer.ExceptionEventArgs e) {
-            LogFile.Log(e.Ex.ToString());
         }
     }
 }

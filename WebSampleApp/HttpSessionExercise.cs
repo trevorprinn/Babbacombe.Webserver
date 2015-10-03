@@ -62,47 +62,6 @@ namespace Babbacombe.WebSampleApp.Exercise {
             base.Dispose(disposing);
         }
 
-        protected override FileRequestedEventArgs OnFileRequested(string filename) {
-            var ea = base.OnFileRequested(filename);
-            if (ea.Handled) return ea;
-            // If the index page has been requested, rather than send it as is, put the
-            // current values into the fields on it, and send that.
-            if (ea.Filename == Path.Combine(BaseFolder, "index.html")) {
-                ea.Document = HttpPage.Create(ea.Filename, this, typeof(IndexPage));
-            }
-            return ea;
-        }
-
-        /// <summary>
-        /// Used to demonstrate how properties in a view model can be copied into a page,
-        /// in this case "index.html" using HttpPage.ApplyModel.
-        /// </summary>
-        private class IndexPageViewModel {
-            private string[] _serverValues;
-            private string[] _clientValues;
-            public string Item1 { get { return _serverValues[0]; } }
-            public string Item2 { get { return _serverValues[1]; } }
-            public string Item3 { get { return _serverValues[2]; } }
-            public string Get1 { get { return _clientValues[0]; } }
-            public string Get2 { get { return _clientValues[1]; } }
-            public string Get3 { get { return _clientValues[2]; } }
-            public string Session { get; private set; }
-
-            public IndexPageViewModel(HttpSession session) {
-                Session = session.SessionId;
-                // Put the values entered into the session form into the model to be copied into the page.
-                _serverValues = session.GetServerValues().ToArray();
-                // Put the values sent from the client into the model.
-                _clientValues = session.GetClientValues().ToArray();
-            }
-        }
-
-        private class IndexPage : HttpPage {
-            public IndexPage(XDocument data, HttpSession session) : base(data, session) {
-                ApplyModel(new IndexPageViewModel(session), "name");
-            }
-        }
-
         public IEnumerable<string> GetServerValues() {
             if (_form == null) return null;
             return _form.GetServerValues();
@@ -115,6 +74,40 @@ namespace Babbacombe.WebSampleApp.Exercise {
 
         public void ShowClientValues(IEnumerable<string> values) {
             if (_form != null) _form.ShowClientValues(values);
+        }
+
+        public string GetSessionId() { return SessionId; }
+    }
+
+    /// <summary>
+    /// Used to demonstrate how properties in a view model can be copied into a page,
+    /// in this case "index.html" using HttpPage.ApplyModel.
+    /// </summary>
+    class IndexPageViewModel {
+        private string[] _serverValues;
+        private string[] _clientValues;
+        public string Item1 { get { return _serverValues[0]; } }
+        public string Item2 { get { return _serverValues[1]; } }
+        public string Item3 { get { return _serverValues[2]; } }
+        public string Get1 { get { return _clientValues[0]; } }
+        public string Get2 { get { return _clientValues[1]; } }
+        public string Get3 { get { return _clientValues[2]; } }
+        public string Session { get; private set; }
+
+        public IndexPageViewModel(HttpSession session) {
+            Session = session.GetSessionId();
+            // Put the values entered into the session form into the model to be copied into the page.
+            _serverValues = session.GetServerValues().ToArray();
+            // Put the values sent from the client into the model.
+            _clientValues = session.GetClientValues().ToArray();
+        }
+    }
+
+    class IndexPage : HttpPage {
+        public IndexPage(XDocument data, HttpSession session) : base(data, session) { }
+
+        protected override void OnPreparePage() {
+            ApplyModel(new IndexPageViewModel((HttpSession)Session));
         }
     }
 

@@ -328,9 +328,45 @@ namespace Babbacombe.Webserver {
                 new HttpErrorPage(this, 404, "File not found").Send();
                 return;
             }
+
+            if (Path.GetExtension(details.Filename) == ".html") {
+                // Try loading the file into an XML document.
+                XDocument page = null;
+                try {
+                    page = XDocument.Load(details.Filename);
+                } catch { }
+                var ctlElt = page == null ? null : page.Root.Element(page.Root.GetDefaultNamespace() + "httppage");
+                // If it is an XML document and has an httppage element, create the page and send it.
+                if (ctlElt != null) {
+                    HttpPage sendpage = createPage(page, ctlElt);
+                    sendpage.Send(requestData);
+                    return;
+                }
+            }
+
             using (var f = new FileStream(details.Filename, FileMode.Open, FileAccess.Read)) {
                 f.CopyTo(requestData.Context.Response.OutputStream);
             }
+        }
+
+        private HttpPage createPage(XDocument doc, XElement ctlElt) {
+            string pageClassName = (string)ctlElt.Attribute("classname");
+            if (pageClassName == null) throw new HttpPageException("HttpPage class not defined");
+            // Use the session class's namespace if one has not been specified.
+            if (!pageClassName.Contains(".")) pageClassName = GetType().Namespace + "." + pageClassName;
+            // Look for the class in the session class's assembly.
+            Type pageType = GetType().Assembly.GetType(pageClassName);
+            if (pageType == null) {
+                // If it's not found there, look through all the loaded assemblies.
+                pageType = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.ExportedTypes).FirstOrDefault(t => t.FullName == pageClassName);
+            }
+            if (pageType == null) throw new HttpPageException(string.Format("HttpPage class '{0}' not found", pageClassName));
+            if (!pageType.IsSubclassOf(typeof(HttpPage))) throw new HttpPageException(string.Format("{0} is not derived from HttpPage", pageClassName));
+            string defaultTagName = (string)ctlElt.Attribute("tagname");
+            ctlElt.Remove();
+            HttpPage page = HttpPage.Create(doc, this, pageType, defaultTagName);
+            page.OnPreparePage();
+            return page;
         }
 
         /// <summary>
@@ -659,5 +695,10 @@ namespace Babbacombe.Webserver {
         public string Name { get; internal set; }
         public string Value { get; internal set; }
         internal QueryItem() { }
+    }
+
+    [Serializable]
+    public class HttpPageException : ApplicationException {
+        public HttpPageException(string message) : base(message) { }
     }
 }
