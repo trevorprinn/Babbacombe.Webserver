@@ -94,6 +94,35 @@ namespace Babbacombe.WebSampleApp.Exercise {
         public string Get3 { get { return _clientValues[2]; } }
         public string Session { get; private set; }
 
+        // Used to put data into the rows of the table
+        public class RowData {
+            [TableDataItemClass("title")]
+            public string Title { get; set; }
+            public string Item1 { get; set; }
+            public string Item2 { get; set; }
+            public string Item3 { get; set; }
+
+            // If Item2 is integer, set the class of the td to "int"
+            public string Item2Class {
+                get {
+                    int x;
+                    return int.TryParse(Item2, out x) ? "int" : null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// A property that defines the row data of a table called ItemTable
+        /// </summary>
+        // Note that the PageModelItemType attribute has to be set for a property that populates a table.
+        [PageModelItemType(PageModelItemTypes.Table)]
+        public IEnumerable<RowData> ItemTable {
+            get {
+                yield return new RowData { Title = "Server", Item1 = Item1, Item2 = Item2, Item3 = Item3 };
+                yield return new RowData { Title = "Client", Item1 = Get1, Item2 = Get2, Item3 = Get3 };
+            }
+        }
+
         public IndexPageViewModel(HttpSession session) {
             Session = session.GetSessionId();
             // Put the values entered into the session form into the model to be copied into the page.

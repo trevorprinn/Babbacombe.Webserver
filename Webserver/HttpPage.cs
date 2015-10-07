@@ -21,6 +21,7 @@
  */
 #endregion
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -191,7 +192,7 @@ namespace Babbacombe.Webserver {
         public void ApplyModel(object model, string tagname = null) {
             if (tagname == null) tagname = DefaultTagName;
             // Loop through the non-array properties that have a Get.
-            foreach (var prop in model.GetType().GetProperties().Where(p => p.CanRead && !p.PropertyType.IsArray)) {
+            foreach (var prop in model.GetType().GetProperties().Where(p => p.CanRead)) {
                 // Default the item type to Value unless the property returns an XElement type.
                 var itemType = typeof(XElement).IsAssignableFrom(prop.PropertyType)
                     ? PageModelItemTypes.Element : PageModelItemTypes.Value;
@@ -206,20 +207,72 @@ namespace Babbacombe.Webserver {
                     attribute = typeAttr.Attribute ?? attribute;
                 }
 
+                object propValue = prop.GetValue(model);
+
                 switch (itemType) {
                     case PageModelItemTypes.Value:
-                        ReplaceValue(tag, prop.GetValue(model).ToString(), tagname);
+                        ReplaceValue(tag, propValue == null ? null : propValue.ToString(), tagname);
                         break;
                     case PageModelItemTypes.Attribute:
-                        ReplaceAttribute(tag, attribute, prop.GetValue(model).ToString(), tagname);
+                        ReplaceAttribute(tag, attribute, propValue == null ? null : propValue.ToString(), tagname);
                         break;
                     case PageModelItemTypes.Element:
-                        ReplaceElement(tag, (XElement)prop.GetValue(model), tagname);
+                        ReplaceElement(tag, (XElement)propValue, tagname);
+                        break;
+                    case PageModelItemTypes.Table:
+                        loadTable(tag, (IEnumerable)propValue, tagname);
                         break;
                     default:
                         break;
                 }
             }
+        }
+
+        private void loadTable(string tag, IEnumerable rowsData, string tagname) {
+            // Find the table element
+            var table = GetTaggedElements(tag, tagname).Where(e => e.Name.LocalName == "table").FirstOrDefault();
+            if (table == null) return;
+            
+            // Get the names of the properties that contain the header and data values
+            string headerNames = (string)table.Attribute("rowheader");
+            string[] headerName = string.IsNullOrWhiteSpace(headerNames) ? new string[0] : headerNames.Split(',');
+            string dataNames = (string)table.Attribute("rowdata");
+            string[] dataName = string.IsNullOrWhiteSpace(dataNames) ? new string[0] : dataNames.Split(',');
+
+            // Clear the non-html attributes
+            table.SetAttributeValue("rowheader", null);
+            table.SetAttributeValue("rowdata", null);
+
+            // If there's no data, do nothing more
+            if (rowsData == null) return;
+
+            foreach (object rowData in rowsData) {
+                // Ignore any rows that aren't objects.
+                if (rowData.GetType().IsValueType) continue;
+                var row = new XElement(Root.GetDefaultNamespace() + "tr");
+                foreach (var h in headerName) row.Add(createTableData(rowData, h, true));
+                foreach (var d in dataName) row.Add(createTableData(rowData, d, false));
+                table.Add(row);
+            }
+        }
+
+        private XElement createTableData(object row, string propName, bool isHeader) {
+            string value = null;
+            var prop = row.GetType().GetProperty(propName);
+            if (prop != null) value = prop.GetValue(row).ToString();
+            var data = new XElement(Root.GetDefaultNamespace() + (isHeader ? "th" : "td"), value);
+
+            string className = null;
+            var classAttr = prop != null ? prop.GetCustomAttribute<TableDataItemClassAttribute>() : null;
+            if (classAttr != null) className = classAttr.ClassName;
+            // Check for a property with the same name but suffixed with Class. This will override the attribute.
+            var classProp = row.GetType().GetProperty(propName + "Class");
+            if (classProp != null) {
+                var classPropValue = classProp.GetValue(row);
+                className = classPropValue != null ? classPropValue.ToString() : null;
+            }
+            if (className != null) data.SetAttributeValue("class", className);
+            return data;
         }
     }
 
@@ -248,7 +301,7 @@ namespace Babbacombe.Webserver {
     /// Defines how a model property value is used in HttpPage.ApplyModel
     /// </summary>
     public enum PageModelItemTypes {
-        Value, Attribute, Element, None
+        Value, Attribute, Element, Table, None
     }
 
     /// <summary>
@@ -270,6 +323,17 @@ namespace Babbacombe.Webserver {
             ItemType = itemType;
             Tag = tag;
             Attribute = attribute;
+        }
+    }
+
+    /// <summary>
+    /// Can be used to set the class for a th or td cell by property
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property)]
+    public class TableDataItemClassAttribute : Attribute {
+        public string ClassName { get; set; }
+        public TableDataItemClassAttribute(string className) {
+            ClassName = className;
         }
     }
 }
