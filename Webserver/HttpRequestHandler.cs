@@ -58,7 +58,7 @@ namespace Babbacombe.Webserver {
         /// The default implementation is just a wrapper around HttpPage.Create that
         /// looks for the template file in the TemplateFolder.
         /// </remarks>
-        protected virtual HttpPage CreatePage(string templateName, Type pageType = null) {
+        protected HttpPage CreatePage(string templateName, Type pageType = null) {
             return HttpPage.Create(Path.Combine(TemplateFolder, templateName), Session, pageType);
         }
 

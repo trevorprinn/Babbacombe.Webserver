@@ -471,7 +471,7 @@ namespace Babbacombe.Webserver {
             if (method == null) throw new HttpUnknownMethodException(className, methodName);
 
             // Choose which set of items (from the url or posted data) to send to the request handler automatically.
-            var bindingItems = Context.Request.HttpMethod == "POST" ? PostedItems : QueryItems;
+            var bindingItems = Context.Request.HttpMethod == "POST" && PostedItems != null ? PostedItems : QueryItems;
             // Create any objects for the parameters of the method and copy item data into them.
             var parameters = new ObjectBinder().Bind(bindingItems, method);
 
