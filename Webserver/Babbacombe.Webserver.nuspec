@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>Babbacombe.Webserver</id>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
         <title>Babbacombe Webserver</title>
         <authors>Trevor Prinn</authors>
         <licenseUrl>https://github.com/trevorprinn/Babbacombe.Webserver/blob/master/LICENCE</licenseUrl>
@@ -12,12 +12,10 @@
         <summary />
         <copyright>Copyright © Babbacombe Computers Ltd 2015</copyright>
         <tags>webserver</tags>
-        <dependencies>
-            <dependency id="Babbacombe.Logger" version="1.0.0" />
-        </dependencies>
+        <dependencies />
     </metadata>
     <files>
-        <file src="bin\Release\Babbacombe.Webserver.XML" target="lib\Babbacombe.Webserver.XML" />
         <file src="bin\Release\Babbacombe.Webserver.dll" target="lib\Babbacombe.Webserver.dll" />
+        <file src="bin\Release\Babbacombe.Webserver.XML" target="lib\Babbacombe.Webserver.XML" />
     </files>
 </package>
